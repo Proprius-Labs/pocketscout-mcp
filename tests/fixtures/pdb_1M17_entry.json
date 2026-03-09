@@ -1,0 +1,1519 @@
+{
+  "audit_author": [
+    {
+      "name": "Stamos, J.",
+      "pdbx_ordinal": 1
+    },
+    {
+      "name": "Sliwkowski, M.X.",
+      "pdbx_ordinal": 2
+    },
+    {
+      "name": "Eigenbrot, C.",
+      "pdbx_ordinal": 3
+    }
+  ],
+  "cell": {
+    "angle_alpha": 90.0,
+    "angle_beta": 90.0,
+    "angle_gamma": 90.0,
+    "length_a": 147.8,
+    "length_b": 147.8,
+    "length_c": 147.8,
+    "zpdb": 24
+  },
+  "citation": [
+    {
+      "country": "US",
+      "id": "primary",
+      "journal_abbrev": "J.Biol.Chem.",
+      "journal_id_astm": "JBCHA3",
+      "journal_id_csd": "0071",
+      "journal_id_issn": "0021-9258",
+      "journal_volume": "277",
+      "page_first": "46265",
+      "page_last": "46272",
+      "pdbx_database_id_doi": "10.1074/jbc.M207135200",
+      "pdbx_database_id_pub_med": 12196540,
+      "rcsb_authors": [
+        "Stamos, J.",
+        "Sliwkowski, M.X.",
+        "Eigenbrot, C."
+      ],
+      "rcsb_is_primary": "Y",
+      "rcsb_journal_abbrev": "J Biological Chem",
+      "title": "Structure of the epidermal growth factor \nreceptor kinase domain alone and in complex \nwith a 4-anilinoquinazoline inhibitor.",
+      "year": 2002
+    }
+  ],
+  "database2": [
+    {
+      "database_code": "1M17",
+      "database_id": "PDB",
+      "pdbx_doi": "10.2210/pdb1m17/pdb",
+      "pdbx_database_accession": "pdb_00001m17"
+    },
+    {
+      "database_code": "RCSB016470",
+      "database_id": "RCSB"
+    },
+    {
+      "database_code": "D_1000016470",
+      "database_id": "WWPDB"
+    }
+  ],
+  "diffrn": [
+    {
+      "ambient_temp": 100.0,
+      "crystal_id": "1",
+      "id": "1"
+    }
+  ],
+  "diffrn_detector": [
+    {
+      "detector": "CCD",
+      "diffrn_id": "1",
+      "pdbx_collection_date": "2001-11-18T00:00:00+0000",
+      "type": "ADSC QUANTUM 4"
+    }
+  ],
+  "diffrn_radiation": [
+    {
+      "diffrn_id": "1",
+      "monochromator": "curved crystal monochromator",
+      "pdbx_diffrn_protocol": "SINGLE WAVELENGTH",
+      "pdbx_monochromatic_or_laue_ml": "M",
+      "pdbx_scattering_type": "x-ray",
+      "wavelength_id": "1"
+    }
+  ],
+  "diffrn_source": [
+    {
+      "diffrn_id": "1",
+      "pdbx_synchrotron_beamline": "5.0.1",
+      "pdbx_synchrotron_site": "ALS",
+      "pdbx_wavelength_list": "1.00",
+      "source": "SYNCHROTRON",
+      "type": "ALS BEAMLINE 5.0.1"
+    }
+  ],
+  "entry": {
+    "id": "1M17"
+  },
+  "exptl": [
+    {
+      "crystals_number": 1,
+      "method": "X-RAY DIFFRACTION"
+    }
+  ],
+  "exptl_crystal": [
+    {
+      "density_matthews": 3.55,
+      "density_percent_sol": 65.35,
+      "id": "1"
+    }
+  ],
+  "exptl_crystal_grow": [
+    {
+      "crystal_id": "1",
+      "method": "VAPOR DIFFUSION, HANGING DROP",
+      "p_h": 7.0,
+      "pdbx_details": "tartrate, pH 7.0, VAPOR DIFFUSION, HANGING DROP, temperature 292K",
+      "temp": 292.0
+    }
+  ],
+  "pdbx_audit_revision_category": [
+    {
+      "category": "chem_comp_atom",
+      "data_content_type": "Structure model",
+      "ordinal": 1,
+      "revision_ordinal": 4
+    },
+    {
+      "category": "chem_comp_bond",
+      "data_content_type": "Structure model",
+      "ordinal": 2,
+      "revision_ordinal": 4
+    },
+    {
+      "category": "database_2",
+      "data_content_type": "Structure model",
+      "ordinal": 3,
+      "revision_ordinal": 4
+    },
+    {
+      "category": "pdbx_initial_refinement_model",
+      "data_content_type": "Structure model",
+      "ordinal": 4,
+      "revision_ordinal": 4
+    },
+    {
+      "category": "struct_ref_seq_dif",
+      "data_content_type": "Structure model",
+      "ordinal": 5,
+      "revision_ordinal": 4
+    },
+    {
+      "category": "struct_site",
+      "data_content_type": "Structure model",
+      "ordinal": 6,
+      "revision_ordinal": 4
+    }
+  ],
+  "pdbx_audit_revision_details": [
+    {
+      "data_content_type": "Structure model",
+      "ordinal": 1,
+      "provider": "repository",
+      "revision_ordinal": 1,
+      "type": "Initial release"
+    }
+  ],
+  "pdbx_audit_revision_group": [
+    {
+      "data_content_type": "Structure model",
+      "group": "Version format compliance",
+      "ordinal": 1,
+      "revision_ordinal": 2
+    },
+    {
+      "data_content_type": "Structure model",
+      "group": "Version format compliance",
+      "ordinal": 2,
+      "revision_ordinal": 3
+    },
+    {
+      "data_content_type": "Structure model",
+      "group": "Data collection",
+      "ordinal": 3,
+      "revision_ordinal": 4
+    },
+    {
+      "data_content_type": "Structure model",
+      "group": "Database references",
+      "ordinal": 4,
+      "revision_ordinal": 4
+    },
+    {
+      "data_content_type": "Structure model",
+      "group": "Derived calculations",
+      "ordinal": 5,
+      "revision_ordinal": 4
+    },
+    {
+      "data_content_type": "Structure model",
+      "group": "Refinement description",
+      "ordinal": 6,
+      "revision_ordinal": 4
+    }
+  ],
+  "pdbx_audit_revision_history": [
+    {
+      "data_content_type": "Structure model",
+      "major_revision": 1,
+      "minor_revision": 0,
+      "ordinal": 1,
+      "revision_date": "2002-09-04T00:00:00+0000"
+    },
+    {
+      "data_content_type": "Structure model",
+      "major_revision": 1,
+      "minor_revision": 1,
+      "ordinal": 2,
+      "revision_date": "2008-04-28T00:00:00+0000"
+    },
+    {
+      "data_content_type": "Structure model",
+      "major_revision": 1,
+      "minor_revision": 2,
+      "ordinal": 3,
+      "revision_date": "2011-07-13T00:00:00+0000"
+    },
+    {
+      "data_content_type": "Structure model",
+      "major_revision": 1,
+      "minor_revision": 3,
+      "ordinal": 4,
+      "revision_date": "2024-02-14T00:00:00+0000"
+    }
+  ],
+  "pdbx_audit_revision_item": [
+    {
+      "data_content_type": "Structure model",
+      "item": "_database_2.pdbx_DOI",
+      "ordinal": 1,
+      "revision_ordinal": 4
+    },
+    {
+      "data_content_type": "Structure model",
+      "item": "_database_2.pdbx_database_accession",
+      "ordinal": 2,
+      "revision_ordinal": 4
+    },
+    {
+      "data_content_type": "Structure model",
+      "item": "_struct_ref_seq_dif.details",
+      "ordinal": 3,
+      "revision_ordinal": 4
+    },
+    {
+      "data_content_type": "Structure model",
+      "item": "_struct_site.pdbx_auth_asym_id",
+      "ordinal": 4,
+      "revision_ordinal": 4
+    },
+    {
+      "data_content_type": "Structure model",
+      "item": "_struct_site.pdbx_auth_comp_id",
+      "ordinal": 5,
+      "revision_ordinal": 4
+    },
+    {
+      "data_content_type": "Structure model",
+      "item": "_struct_site.pdbx_auth_seq_id",
+      "ordinal": 6,
+      "revision_ordinal": 4
+    }
+  ],
+  "pdbx_database_related": [
+    {
+      "content_type": "unspecified",
+      "db_id": "1M14",
+      "db_name": "PDB",
+      "details": "Apo-form Epidermal Growth Factor Receptor kinase domain"
+    }
+  ],
+  "pdbx_database_status": {
+    "deposit_site": "RCSB",
+    "pdb_format_compatible": "Y",
+    "process_site": "RCSB",
+    "recvd_initial_deposition_date": "2002-06-17T00:00:00+0000",
+    "status_code": "REL",
+    "status_code_sf": "REL"
+  },
+  "pdbx_initial_refinement_model": [
+    {
+      "accession_code": "1FGK",
+      "details": "pdb entry 1FGK; poly alanine",
+      "id": 1,
+      "source_name": "PDB",
+      "type": "experimental model"
+    }
+  ],
+  "pdbx_vrpt_summary": {
+    "attempted_validation_steps": "molprobity,validation-pack,xtriage,eds,mogul,buster-report,percentiles,writexml,writecif,writepdf",
+    "ligands_for_buster_report": "Y",
+    "report_creation_date": "2024-02-03T16:08:00+0000"
+  },
+  "pdbx_vrpt_summary_diffraction": [
+    {
+      "dcc_r": 0.21,
+      "eds_r": 0.21,
+      "fo_fc_correlation": 0.951,
+      "padilla_yeates_l2_mean": 0.34,
+      "padilla_yeates_lmean": 0.505,
+      "wilson_baniso": "[65.861,65.861,65.861,0.000,0.000,0.000]",
+      "wilson_bestimate": 65.861,
+      "acentric_outliers": 0,
+      "bulk_solvent_b": 57.804,
+      "bulk_solvent_k": 0.342,
+      "centric_outliers": 0,
+      "data_anisotropy": 0.0,
+      "data_completeness": 99.98,
+      "exp_method": "x-ray",
+      "num_miller_indices": 16628,
+      "number_reflns_rfree": 689,
+      "percent_rsrzoutliers": 6.75,
+      "percent_free_reflections": 4.14,
+      "trans_ncsdetails": "The largest off-origin peak in the Patterson function is 3.12% of the height of the origin peak. No significant pseudotranslation is detected.",
+      "twin_fraction": "-l,-k,-h:0.030",
+      "bfactor_type": "FULL",
+      "dccrfree": 0.24,
+      "edsres_high": 2.6,
+      "edsres_low": 28.99,
+      "iover_sigma": "2.48(2.61A)"
+    }
+  ],
+  "pdbx_vrpt_summary_geometry": [
+    {
+      "angles_rmsz": 0.73,
+      "bonds_rmsz": 0.48,
+      "clashscore": 10.98,
+      "num_hreduce": 2557,
+      "num_angles_rmsz": 3468,
+      "num_bonds_rmsz": 2564,
+      "percent_ramachandran_outliers": 2.27,
+      "percent_rotamer_outliers": 2.55
+    }
+  ],
+  "rcsb_accession_info": {
+    "deposit_date": "2002-06-17T00:00:00+0000",
+    "has_released_experimental_data": "Y",
+    "initial_release_date": "2002-09-04T00:00:00+0000",
+    "major_revision": 1,
+    "minor_revision": 3,
+    "revision_date": "2024-02-14T00:00:00+0000",
+    "status_code": "REL"
+  },
+  "rcsb_binding_affinity": [
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 7.599999904632568
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 3.9000000953674316
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 0.5199999809265137
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 1.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "symbol": "<",
+      "type": "IC50",
+      "unit": "nM",
+      "value": 150.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 6.300000190734863
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 0.5
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 3.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 0.3499999940395355
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 1.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 0.699999988079071
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 3.5
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 1.5
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 2.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 20.299999237060547
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Ki",
+      "unit": "nM",
+      "value": 123.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 10.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Ki",
+      "unit": "nM",
+      "value": 136.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Ki",
+      "unit": "nM",
+      "value": 0.10000000149011612
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 0.6000000238418579
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 11.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 17.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 16.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 19.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Ki",
+      "unit": "nM",
+      "value": 95.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 15.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 6.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 99,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 260.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 99,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 4.599999904632568
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 5.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 1.2000000476837158
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 8.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 50.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 51.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 48.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 54.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Ki",
+      "unit": "nM",
+      "value": 45.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 40.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 47.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 68.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 70.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 67.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 77.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 0.4000000059604645
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 73.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 60.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 0.8500000238418579
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 26.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 20.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 23.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 0.9700000286102295
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 34.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 35.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 1.2000000476837158
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 32.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 39.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 37.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 28.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 19.299999237060547
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 30.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 200.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 201.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 1.2999999523162842
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 170.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 160.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 180.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 1.399999976158142
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 0.47999998927116394
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 0.028999999165534973
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 0.05900000035762787
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 240.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 100.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 99,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 970.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 2.5999999046325684
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 97.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 87.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 3.0999999046325684
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 80.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 92.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 95.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 0.699999988079071
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 3.5999999046325684
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 153.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 99,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 0.8500000238418579
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 0.20000000298023224
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 190.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 1.600000023841858
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 6.400000095367432
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 99,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 11.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 0.4699999988079071
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 5.900000095367432
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 310.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 140.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Ki",
+      "unit": "nM",
+      "value": 0.30000001192092896
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 2.200000047683716
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 99,
+      "type": "IC50",
+      "unit": "nM",
+      "value": 3.0
+    },
+    {
+      "comp_id": "AQ4",
+      "link": "https://www.bindingdb.org/rwd/jsp/dbsearch/PrimarySearch_pdbids.jsp?pdbids_submit=Search&pdbids=1M17",
+      "provenance_code": "BindingDB",
+      "reference_sequence_identity": 100,
+      "type": "Kd",
+      "unit": "nM",
+      "value": 0.6700000166893005
+    }
+  ],
+  "rcsb_entry_container_identifiers": {
+    "assembly_ids": [
+      "1"
+    ],
+    "entity_ids": [
+      "1",
+      "2",
+      "3"
+    ],
+    "entry_id": "1M17",
+    "model_ids": [
+      1
+    ],
+    "non_polymer_entity_ids": [
+      "2"
+    ],
+    "polymer_entity_ids": [
+      "1"
+    ],
+    "pubmed_id": 12196540,
+    "rcsb_id": "1M17"
+  },
+  "rcsb_entry_info": {
+    "assembly_count": 1,
+    "branched_entity_count": 0,
+    "cis_peptide_count": 0,
+    "deposited_atom_count": 2560,
+    "deposited_deuterated_water_count": 0,
+    "deposited_hydrogen_atom_count": 0,
+    "deposited_model_count": 1,
+    "deposited_modeled_polymer_monomer_count": 312,
+    "deposited_nonpolymer_entity_instance_count": 1,
+    "deposited_polymer_entity_instance_count": 1,
+    "deposited_polymer_monomer_count": 333,
+    "deposited_solvent_atom_count": 20,
+    "deposited_unmodeled_polymer_monomer_count": 21,
+    "diffrn_radiation_wavelength_maximum": 1.0,
+    "diffrn_radiation_wavelength_minimum": 1.0,
+    "disulfide_bond_count": 0,
+    "entity_count": 3,
+    "experimental_method": "X-ray",
+    "experimental_method_count": 1,
+    "inter_mol_covalent_bond_count": 0,
+    "inter_mol_metalic_bond_count": 0,
+    "molecular_weight": 38.27,
+    "na_polymer_entity_types": "Other",
+    "nonpolymer_entity_count": 1,
+    "nonpolymer_molecular_weight_maximum": 0.39,
+    "nonpolymer_molecular_weight_minimum": 0.39,
+    "polymer_composition": "homomeric protein",
+    "polymer_entity_count": 1,
+    "polymer_entity_count_dna": 0,
+    "polymer_entity_count_rna": 0,
+    "polymer_entity_count_nucleic_acid": 0,
+    "polymer_entity_count_nucleic_acid_hybrid": 0,
+    "polymer_entity_count_protein": 1,
+    "polymer_entity_taxonomy_count": 1,
+    "polymer_molecular_weight_maximum": 37.88,
+    "polymer_molecular_weight_minimum": 37.88,
+    "polymer_monomer_count_maximum": 333,
+    "polymer_monomer_count_minimum": 333,
+    "resolution_combined": [
+      2.6
+    ],
+    "selected_polymer_entity_types": "Protein (only)",
+    "software_programs_combined": [
+      "AMORE",
+      "CCP4",
+      "DENZO",
+      "TRUNCATE",
+      "X-PLOR"
+    ],
+    "solvent_entity_count": 1,
+    "structure_determination_methodology": "experimental",
+    "structure_determination_methodology_priority": 10,
+    "diffrn_resolution_high": {
+      "provenance_source": "Depositor assigned",
+      "value": 2.6
+    }
+  },
+  "rcsb_primary_citation": {
+    "country": "US",
+    "id": "primary",
+    "journal_abbrev": "J.Biol.Chem.",
+    "journal_id_astm": "JBCHA3",
+    "journal_id_csd": "0071",
+    "journal_id_issn": "0021-9258",
+    "journal_volume": "277",
+    "page_first": "46265",
+    "page_last": "46272",
+    "pdbx_database_id_doi": "10.1074/jbc.M207135200",
+    "pdbx_database_id_pub_med": 12196540,
+    "rcsb_orcididentifiers": [
+      "?",
+      "?",
+      "?"
+    ],
+    "rcsb_authors": [
+      "Stamos, J.",
+      "Sliwkowski, M.X.",
+      "Eigenbrot, C."
+    ],
+    "rcsb_journal_abbrev": "J Biological Chem",
+    "title": "Structure of the epidermal growth factor \nreceptor kinase domain alone and in complex \nwith a 4-anilinoquinazoline inhibitor.",
+    "year": 2002
+  },
+  "refine": [
+    {
+      "aniso_b11": 9.7,
+      "aniso_b12": 0.0,
+      "aniso_b13": 0.0,
+      "aniso_b22": 9.7,
+      "aniso_b23": 0.0,
+      "aniso_b33": 9.7,
+      "details": "BULK SOLVENT MODEL USED",
+      "ls_rfactor_rfree": 0.295,
+      "ls_rfactor_rfree_error": 0.011,
+      "ls_rfactor_rwork": 0.251,
+      "ls_rfactor_all": 0.2527,
+      "ls_rfactor_obs": 0.251,
+      "ls_dres_high": 2.6,
+      "ls_dres_low": 30.0,
+      "ls_number_reflns_rfree": 689,
+      "ls_number_reflns_all": 16628,
+      "ls_number_reflns_obs": 16628,
+      "ls_percent_reflns_rfree": 4.1,
+      "ls_percent_reflns_obs": 99.8,
+      "pdbx_rfree_selection_details": "RANDOM",
+      "pdbx_data_cutoff_high_abs_f": 1000000.0,
+      "pdbx_data_cutoff_low_abs_f": 0.001,
+      "pdbx_diffrn_id": [
+        "1"
+      ],
+      "pdbx_isotropic_thermal_model": "RESTRAINED",
+      "pdbx_ls_cross_valid_method": "THROUGHOUT",
+      "pdbx_ls_sigma_f": 0.2,
+      "pdbx_method_to_determine_struct": "MOLECULAR REPLACEMENT",
+      "pdbx_refine_id": "X-RAY DIFFRACTION",
+      "pdbx_starting_model": "pdb entry 1FGK; poly alanine",
+      "pdbx_stereochemistry_target_values": "Engh & Huber",
+      "biso_mean": 70.4
+    }
+  ],
+  "refine_analyze": [
+    {
+      "luzzati_coordinate_error_free": 0.41,
+      "luzzati_coordinate_error_obs": 0.36,
+      "luzzati_dres_low_obs": 5.0,
+      "luzzati_sigma_afree": 0.41,
+      "luzzati_sigma_aobs": 0.33,
+      "pdbx_refine_id": "X-RAY DIFFRACTION"
+    }
+  ],
+  "refine_hist": [
+    {
+      "cycle_id": "LAST",
+      "d_res_high": 2.6,
+      "d_res_low": 30.0,
+      "number_atoms_solvent": 20,
+      "number_atoms_total": 2560,
+      "pdbx_number_atoms_ligand": 29,
+      "pdbx_number_atoms_nucleic_acid": 0,
+      "pdbx_number_atoms_protein": 2511,
+      "pdbx_refine_id": "X-RAY DIFFRACTION"
+    }
+  ],
+  "refine_ls_restr": [
+    {
+      "dev_ideal": 0.011,
+      "pdbx_refine_id": "X-RAY DIFFRACTION",
+      "type": "x_bond_d"
+    },
+    {
+      "dev_ideal": 1.5,
+      "pdbx_refine_id": "X-RAY DIFFRACTION",
+      "type": "x_angle_deg"
+    },
+    {
+      "dev_ideal": 23.3,
+      "pdbx_refine_id": "X-RAY DIFFRACTION",
+      "type": "x_dihedral_angle_d"
+    },
+    {
+      "dev_ideal": 1.81,
+      "pdbx_refine_id": "X-RAY DIFFRACTION",
+      "type": "x_improper_angle_d"
+    },
+    {
+      "dev_ideal": 4.85,
+      "dev_ideal_target": 2.0,
+      "pdbx_refine_id": "X-RAY DIFFRACTION",
+      "type": "x_mcbond_it"
+    },
+    {
+      "dev_ideal": 7.22,
+      "dev_ideal_target": 3.0,
+      "pdbx_refine_id": "X-RAY DIFFRACTION",
+      "type": "x_mcangle_it"
+    },
+    {
+      "dev_ideal": 10.25,
+      "dev_ideal_target": 4.0,
+      "pdbx_refine_id": "X-RAY DIFFRACTION",
+      "type": "x_scbond_it"
+    },
+    {
+      "dev_ideal": 13.67,
+      "dev_ideal_target": 6.0,
+      "pdbx_refine_id": "X-RAY DIFFRACTION",
+      "type": "x_scangle_it"
+    }
+  ],
+  "reflns": [
+    {
+      "d_resolution_high": 2.6,
+      "d_resolution_low": 30.0,
+      "number_all": 16628,
+      "number_obs": 16628,
+      "observed_criterion_sigma_i": -3.0,
+      "pdbx_rmerge_iobs": 0.093,
+      "pdbx_rsym_value": 0.093,
+      "pdbx_diffrn_id": [
+        "1"
+      ],
+      "pdbx_net_iover_sigma_i": 27.0,
+      "pdbx_ordinal": 1,
+      "pdbx_redundancy": 11.0,
+      "percent_possible_obs": 100.0,
+      "biso_wilson_estimate": 88.5
+    }
+  ],
+  "reflns_shell": [
+    {
+      "rmerge_iobs": 0.99,
+      "d_res_high": 2.6,
+      "d_res_low": 2.69,
+      "mean_iover_sig_iobs": 2.8,
+      "number_unique_all": 1635,
+      "pdbx_rsym_value": 0.99,
+      "pdbx_ordinal": 1,
+      "pdbx_redundancy": 10.5,
+      "percent_possible_all": 100.0
+    }
+  ],
+  "software": [
+    {
+      "classification": "data reduction",
+      "name": "DENZO",
+      "pdbx_ordinal": 1
+    },
+    {
+      "classification": "data reduction",
+      "name": "TRUNCATE",
+      "pdbx_ordinal": 2
+    },
+    {
+      "classification": "phasing",
+      "name": "AMoRE",
+      "pdbx_ordinal": 3
+    },
+    {
+      "classification": "refinement",
+      "name": "X-PLOR",
+      "pdbx_ordinal": 4,
+      "version": "98.1"
+    },
+    {
+      "classification": "data scaling",
+      "name": "CCP4",
+      "pdbx_ordinal": 5,
+      "version": "(TRUNCATE)"
+    }
+  ],
+  "struct": {
+    "title": "Epidermal Growth Factor Receptor tyrosine kinase domain with 4-anilinoquinazoline inhibitor erlotinib"
+  },
+  "struct_keywords": {
+    "pdbx_keywords": "TRANSFERASE",
+    "text": "TRANSFERASE, tyrosine kinase domain"
+  },
+  "symmetry": {
+    "int_tables_number": 197,
+    "space_group_name_hm": "I 2 3"
+  },
+  "rcsb_id": "1M17"
+}

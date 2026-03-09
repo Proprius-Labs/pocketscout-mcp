@@ -1,0 +1,46 @@
+{
+  "query": "(EGFR[Title/Abstract]) AND (binding site[Title/Abstract] OR crystal structure[Title/Abstract] OR \"drug design\"[Title/Abstract] OR allosteric[Title/Abstract] OR druggable[Title/Abstract] OR \"de novo design\"[Title/Abstract])",
+  "total_found": 1415,
+  "papers": [
+    {
+      "pmid": "37073562",
+      "title": "Targeted therapy for lung cancer: Beyond EGFR and ALK.",
+      "authors": "Herrera-Ju\u00e1rez M et al.",
+      "year": 2023,
+      "journal": "Cancer",
+      "abstract_snippet": ""
+    },
+    {
+      "pmid": "27251290",
+      "title": "Overcoming EGFR(T790M) and EGFR(C797S) resistance with mutant-selective allosteric inhibitors.",
+      "authors": "Jia Y et al.",
+      "year": 2016,
+      "journal": "Nature",
+      "abstract_snippet": ""
+    },
+    {
+      "pmid": "33839159",
+      "title": "Discovery of amivantamab (JNJ-61186372), a bispecific antibody targeting EGFR and MET.",
+      "authors": "Neijssen J et al.",
+      "year": 2021,
+      "journal": "J Biol Chem",
+      "abstract_snippet": ""
+    },
+    {
+      "pmid": "39366135",
+      "title": "Advancements in fourth-generation EGFR TKIs in EGFR-mutant NSCLC: Bridging biological insights and therapeutic development.",
+      "authors": "Corvaja C et al.",
+      "year": 2024,
+      "journal": "Cancer Treat Rev",
+      "abstract_snippet": ""
+    },
+    {
+      "pmid": "34731610",
+      "title": "Targeting glioblastoma signaling and metabolism with a re-purposed brain-penetrant drug.",
+      "authors": "Bi J et al.",
+      "year": 2021,
+      "journal": "Cell Rep",
+      "abstract_snippet": ""
+    }
+  ]
+}

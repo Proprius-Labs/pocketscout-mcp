@@ -1,0 +1,80 @@
+[
+  {
+    "pdbx_entity_nonpoly": {
+      "comp_id": "MG",
+      "entity_id": "2",
+      "name": "MAGNESIUM ION"
+    },
+    "rcsb_nonpolymer_entity": {
+      "formula_weight": 0.024,
+      "pdbx_description": "MAGNESIUM ION",
+      "pdbx_number_of_molecules": 1
+    },
+    "rcsb_nonpolymer_entity_container_identifiers": {
+      "asym_ids": [
+        "B"
+      ],
+      "auth_asym_ids": [
+        "A"
+      ],
+      "chem_ref_def_id": "MG",
+      "entity_id": "2",
+      "entry_id": "6OIM",
+      "nonpolymer_comp_id": "MG",
+      "rcsb_id": "6OIM_2"
+    },
+    "rcsb_id": "6OIM_2"
+  },
+  {
+    "pdbx_entity_nonpoly": {
+      "comp_id": "GDP",
+      "entity_id": "3",
+      "name": "GUANOSINE-5'-DIPHOSPHATE"
+    },
+    "rcsb_nonpolymer_entity": {
+      "formula_weight": 0.443,
+      "pdbx_description": "GUANOSINE-5'-DIPHOSPHATE",
+      "pdbx_number_of_molecules": 1
+    },
+    "rcsb_nonpolymer_entity_container_identifiers": {
+      "asym_ids": [
+        "C"
+      ],
+      "auth_asym_ids": [
+        "A"
+      ],
+      "chem_ref_def_id": "GDP",
+      "entity_id": "3",
+      "entry_id": "6OIM",
+      "nonpolymer_comp_id": "GDP",
+      "rcsb_id": "6OIM_3"
+    },
+    "rcsb_id": "6OIM_3"
+  },
+  {
+    "pdbx_entity_nonpoly": {
+      "comp_id": "MOV",
+      "entity_id": "4",
+      "name": "AMG 510 (bound form)"
+    },
+    "rcsb_nonpolymer_entity": {
+      "formula_weight": 0.563,
+      "pdbx_description": "AMG 510 (bound form)",
+      "pdbx_number_of_molecules": 1
+    },
+    "rcsb_nonpolymer_entity_container_identifiers": {
+      "asym_ids": [
+        "D"
+      ],
+      "auth_asym_ids": [
+        "A"
+      ],
+      "chem_ref_def_id": "MOV",
+      "entity_id": "4",
+      "entry_id": "6OIM",
+      "nonpolymer_comp_id": "MOV",
+      "rcsb_id": "6OIM_4"
+    },
+    "rcsb_id": "6OIM_4"
+  }
+]
