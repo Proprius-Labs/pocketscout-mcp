@@ -35,8 +35,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pmangiamele/pocketscout-mcp"
-Issues = "https://github.com/pmangiamele/pocketscout-mcp/issues"
+Homepage = "https://github.com/paulmm/pocketscout-mcp"
+Issues = "https://github.com/paulmm/pocketscout-mcp/issues"
 
 [build-system]
 requires = ["hatchling"]

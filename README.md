@@ -40,7 +40,7 @@ pip install pocketscout-mcp
 Or install from source:
 
 ```bash
-git clone https://github.com/pmangiamele/pocketscout-mcp.git
+git clone https://github.com/paulmm/pocketscout-mcp.git
 cd pocketscout-mcp
 pip install -e .
 ```
