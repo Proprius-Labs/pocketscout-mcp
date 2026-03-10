@@ -37,20 +37,36 @@ PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tool
 pip install pocketscout-mcp
 ```
 
+Or install from source:
+
+```bash
+git clone https://github.com/pmangiamele/pocketscout-mcp.git
+cd pocketscout-mcp
+pip install -e .
+```
+
+> **Requires Python 3.11+.** If your system Python is older, use [uv](https://docs.astral.sh/uv/): `uv pip install pocketscout-mcp`
+
 ### Use with Claude Desktop
 
 Add to your `claude_desktop_config.json`:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "pocketscout": {
-      "command": "python",
+      "command": "python3",
       "args": ["-m", "pocketscout_mcp.server"]
     }
   }
 }
 ```
+
+> **Tip**: If you installed in a virtual environment, use the full path to that Python:
+> `"command": "/path/to/venv/bin/python3"`
 
 Restart Claude Desktop. Then ask:
 
@@ -61,16 +77,10 @@ Claude will orchestrate all six tools and deliver a binding site assessment.
 ### Use with Claude Code
 
 ```bash
-claude mcp add pocketscout -- python -m pocketscout_mcp.server
+claude mcp add pocketscout -- python3 -m pocketscout_mcp.server
 ```
 
-### Run standalone (for testing)
-
-```bash
-python -m pocketscout_mcp.server
-```
-
-Or use the MCP Inspector:
+### Test with MCP Inspector
 
 ```bash
 fastmcp dev src/pocketscout_mcp/server.py
