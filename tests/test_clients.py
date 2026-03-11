@@ -253,6 +253,84 @@ class TestPubMedParsing:
         assert self.result["total_found"] > 100  # EGFR: well-studied
 
 
+# ---- Topology parsing ----
+
+
+class TestTopologyParsing:
+    """Test UniProt topology extraction."""
+
+    def setup_method(self):
+        self.entry = load_fixture("uniprot_P00533.json")
+
+    def test_egfr_has_topology(self):
+        profile = parse_target_profile(self.entry)
+        topo = profile["topology"]
+        assert len(topo) > 0
+
+    def test_egfr_extracellular_region(self):
+        profile = parse_target_profile(self.entry)
+        topo = profile["topology"]
+        extracellular = [t for t in topo if t["region_type"] == "extracellular"]
+        assert len(extracellular) == 1
+        assert extracellular[0]["start"] == 25
+        assert extracellular[0]["end"] == 645
+
+    def test_egfr_transmembrane(self):
+        profile = parse_target_profile(self.entry)
+        topo = profile["topology"]
+        tm = [t for t in topo if t["region_type"] == "transmembrane"]
+        assert len(tm) == 1
+        assert tm[0]["start"] == 646
+        assert tm[0]["end"] == 668
+
+    def test_egfr_cytoplasmic(self):
+        profile = parse_target_profile(self.entry)
+        topo = profile["topology"]
+        cyto = [t for t in topo if t["region_type"] == "cytoplasmic"]
+        assert len(cyto) == 1
+        assert cyto[0]["start"] == 669
+
+    def test_kras_no_topology(self):
+        """KRAS is a soluble cytoplasmic protein — no membrane topology."""
+        kras = load_fixture("uniprot_P01116.json")
+        profile = parse_target_profile(kras)
+        topo = profile["topology"]
+        # KRAS should have no transmembrane or topological domain annotations
+        membrane_topo = [t for t in topo if t["region_type"] in ("extracellular", "transmembrane", "cytoplasmic")]
+        assert len(membrane_topo) == 0
+
+
+class TestConstructCoverage:
+    """Test the construct coverage model."""
+
+    def test_cytoplasmic_only_warning(self):
+        from pocketscout_mcp.models import ConstructCoverage
+        cov = ConstructCoverage(
+            pdb_id="1M17",
+            chain_residue_start=695,
+            chain_residue_end=1022,
+            full_protein_length=1210,
+            coverage_fraction=0.27,
+            regions_covered=["cytoplasmic"],
+            accessibility_warning="De novo protein binders CANNOT access intracellular targets.",
+        )
+        assert cov.accessibility_warning != ""
+        assert cov.coverage_fraction < 0.3
+
+    def test_extracellular_no_warning(self):
+        from pocketscout_mcp.models import ConstructCoverage
+        cov = ConstructCoverage(
+            pdb_id="1MOX",
+            chain_residue_start=1,
+            chain_residue_end=621,
+            full_protein_length=1210,
+            coverage_fraction=0.51,
+            regions_covered=["extracellular"],
+            accessibility_warning="",
+        )
+        assert cov.accessibility_warning == ""
+
+
 # ---- Integration: Conservation helper ----
 
 

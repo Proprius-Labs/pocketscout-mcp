@@ -14,6 +14,38 @@ from pydantic import BaseModel, Field
 # Tool 1: characterize_target
 # ---------------------------------------------------------------------------
 
+class TopologyRegion(BaseModel):
+    """A topological region of the protein (extracellular, transmembrane, cytoplasmic)."""
+    start: int
+    end: int
+    region_type: str = Field(description="'extracellular', 'transmembrane', 'cytoplasmic', or 'signal_peptide'")
+    description: str = Field(default="", description="Additional annotation from UniProt")
+
+
+class ConstructCoverage(BaseModel):
+    """Analysis of what portion of the full protein a PDB structure covers.
+
+    CRITICAL for de novo binder design: a structure covering only the
+    intracellular kinase domain cannot be used to design extracellular
+    protein binders. This check prevents the most common structural
+    mismatch error in binder design campaigns.
+    """
+    pdb_id: str
+    chain_residue_start: int = Field(description="First residue number in the PDB chain")
+    chain_residue_end: int = Field(description="Last residue number in the PDB chain")
+    full_protein_length: int = Field(description="Full-length UniProt sequence length")
+    coverage_fraction: float = Field(description="Fraction of the full protein captured by this structure")
+    regions_covered: list[str] = Field(
+        description="Which topological regions this structure covers: 'extracellular', 'transmembrane', 'cytoplasmic'. "
+                    "De novo protein binders require extracellular coverage. Small molecules can target any region."
+    )
+    accessibility_warning: str = Field(
+        default="",
+        description="WARNING if the structure covers only intracellular regions — de novo protein binders "
+                    "CANNOT reach intracellular targets. This is the single most important check for binder design feasibility."
+    )
+
+
 class ConfidenceRegion(BaseModel):
     """A contiguous region of the protein with a confidence assessment."""
     start: int
@@ -34,6 +66,12 @@ class TargetProfile(BaseModel):
     disease_associations: list[str] = Field(default_factory=list, description="Diseases linked to this target in UniProt")
     target_class: str = Field(description="Druggability class: 'kinase', 'gpcr', 'protease', 'ion_channel', 'nuclear_receptor', 'ppi', 'enzyme_other', or 'other'")
     sequence_length: int = Field(description="Full protein sequence length in amino acids")
+    topology: list[TopologyRegion] = Field(
+        default_factory=list,
+        description="Topological regions of the protein (extracellular, transmembrane, cytoplasmic). "
+                    "CRITICAL for modality selection: de novo protein binders can only target extracellular regions. "
+                    "If topology is empty, the protein may be entirely soluble/cytoplasmic (e.g. KRAS)."
+    )
     alphafold_confidence: list[ConfidenceRegion] = Field(
         default_factory=list,
         description="AlphaFold pLDDT confidence by region. Low-confidence regions (<70) likely represent disordered or flexible segments where predicted binding sites should not be trusted."
@@ -75,6 +113,12 @@ class BindingSiteMap(BaseModel):
     pdb_id: str
     num_sites: int
     sites: list[BindingSite]
+    construct_coverage: ConstructCoverage | None = Field(
+        default=None,
+        description="What portion of the full protein this structure covers, and whether it includes "
+                    "extracellular regions accessible to protein binders. CHECK THIS FIRST before "
+                    "recommending de novo protein binder design against binding sites in this structure."
+    )
     artifact_ligands_filtered: list[str] = Field(
         default_factory=list,
         description="Ligands excluded as crystallization artifacts (glycerol, PEG, sulfate, etc.)"

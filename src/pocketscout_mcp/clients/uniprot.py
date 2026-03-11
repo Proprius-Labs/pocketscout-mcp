@@ -143,6 +143,9 @@ def parse_target_profile(entry: dict) -> dict:
     seq_info = entry.get("sequence", {})
     sequence_length = seq_info.get("length", 0) if isinstance(seq_info, dict) else 0
 
+    # Topology — extracellular, transmembrane, cytoplasmic regions
+    topology = _parse_topology(entry)
+
     # Classify target
     target_class = _classify_target(protein_family, protein_name, entry)
 
@@ -157,7 +160,59 @@ def parse_target_profile(entry: dict) -> dict:
         "disease_associations": disease_associations,
         "target_class": target_class,
         "sequence_length": sequence_length,
+        "topology": topology,
     }
+
+
+def _parse_topology(entry: dict) -> list[dict]:
+    """Extract topological regions from UniProt features.
+
+    Identifies extracellular, transmembrane, and cytoplasmic regions.
+    Returns a list of dicts ready to be unpacked into TopologyRegion.
+    """
+    type_map = {
+        "Topological domain": True,
+        "Transmembrane": True,
+        "Signal": True,
+    }
+
+    desc_to_region = {
+        "extracellular": "extracellular",
+        "cytoplasmic": "cytoplasmic",
+        "lumenal": "extracellular",  # ER lumen is topologically extracellular
+        "periplasmic": "extracellular",
+        "helical": "transmembrane",
+    }
+
+    regions = []
+    for feature in entry.get("features", []):
+        feat_type = feature.get("type", "")
+        if feat_type not in type_map:
+            continue
+
+        loc = feature.get("location", {})
+        start = loc.get("start", {}).get("value")
+        end = loc.get("end", {}).get("value")
+        if start is None or end is None:
+            continue
+
+        desc = feature.get("description", "").lower().strip()
+
+        if feat_type == "Signal":
+            region_type = "signal_peptide"
+        elif feat_type == "Transmembrane":
+            region_type = "transmembrane"
+        else:
+            region_type = desc_to_region.get(desc, desc or "unknown")
+
+        regions.append({
+            "start": start,
+            "end": end,
+            "region_type": region_type,
+            "description": feature.get("description", ""),
+        })
+
+    return regions
 
 
 def _classify_target(family: str, name: str, entry: dict) -> str:

@@ -31,7 +31,9 @@ from .clients.pubmed import PubMedClient
 from .clients.base import APIError
 from .models import (
     TargetProfile,
+    TopologyRegion,
     ConfidenceRegion,
+    ConstructCoverage,
     BindingSite,
     BindingSiteResidue,
     BindingSiteMap,
@@ -135,8 +137,14 @@ async def characterize_target(
         ConfidenceRegion(**r) for r in af_data.get("regions", [])
     ]
 
+    # Build topology regions
+    topology_regions = [
+        TopologyRegion(**t) for t in profile_data.pop("topology", [])
+    ]
+
     profile = TargetProfile(
         **profile_data,
+        topology=topology_regions,
         alphafold_confidence=confidence_regions,
         alphafold_overall_confidence=af_data.get("overall_confidence"),
         low_confidence_warnings=af_data.get("warnings", []),
@@ -364,7 +372,25 @@ async def get_binding_sites(pdb_id: str) -> dict:
                         s.site_type = "allosteric"
                         s.druggability_notes = _assess_druggability("allosteric", s.ligand_id or "", s.num_residues)
 
-    interp_parts = [f"{len(sites)} binding site(s) identified from co-crystallized ligands in {pdb_id}."]
+    # ---- Construct coverage check ----
+    coverage = await _compute_construct_coverage(pdb_id)
+
+    # ---- Build interpretation ----
+    interp_parts = []
+
+    # Lead with accessibility warning if present — this is the most important finding
+    if coverage and coverage.accessibility_warning:
+        interp_parts.append(f"⚠ ACCESSIBILITY: {coverage.accessibility_warning}")
+
+    interp_parts.append(f"{len(sites)} binding site(s) identified from co-crystallized ligands in {pdb_id}.")
+
+    if coverage:
+        interp_parts.append(
+            f"Structure covers residues {coverage.chain_residue_start}–{coverage.chain_residue_end} "
+            f"of {coverage.full_protein_length} ({coverage.coverage_fraction:.0%} of full protein). "
+            f"Regions: {', '.join(coverage.regions_covered)}."
+        )
+
     if artifacts:
         interp_parts.append(f"Filtered {len(artifacts)} crystallization artifacts: {', '.join(artifacts[:5])}.")
     for s in sites:
@@ -380,6 +406,7 @@ async def get_binding_sites(pdb_id: str) -> dict:
         pdb_id=pdb_id.upper(),
         num_sites=len(sites),
         sites=sites,
+        construct_coverage=coverage,
         artifact_ligands_filtered=artifacts,
         interpretation=" ".join(interp_parts),
     )
@@ -702,6 +729,90 @@ literature where relevant. Flag uncertainties clearly."""
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+async def _compute_construct_coverage(pdb_id: str) -> ConstructCoverage | None:
+    """Determine what portion of the full protein a PDB structure covers.
+
+    Cross-references the PDB chain residue range against UniProt topology
+    to determine whether the structure covers extracellular, transmembrane,
+    or cytoplasmic regions. This is the key check for de novo binder
+    design feasibility.
+    """
+    pdb_id = pdb_id.upper()
+
+    # Get the UniProt residue range from PDB
+    residue_range = await pdb.get_uniprot_residue_range(pdb_id)
+    if not residue_range:
+        return None
+
+    chain_start, chain_end = residue_range
+
+    # Get UniProt mapping to fetch topology
+    mappings = await pdb.get_uniprot_mapping(pdb_id)
+    if not mappings:
+        return None
+
+    uniprot_id = mappings[0]
+
+    try:
+        entry = await uniprot.get_entry(uniprot_id)
+    except APIError:
+        return None
+
+    profile_data = parse_target_profile(entry)
+    seq_length = profile_data["sequence_length"]
+    topology = profile_data.get("topology", [])
+
+    coverage_frac = (chain_end - chain_start + 1) / seq_length if seq_length > 0 else 0.0
+
+    # Determine which topological regions the construct covers
+    regions_covered = set()
+    if not topology:
+        # No topology annotations — protein is likely entirely soluble/cytoplasmic
+        regions_covered.add("cytoplasmic (no membrane topology annotated)")
+    else:
+        for topo in topology:
+            topo_start = topo["start"]
+            topo_end = topo["end"]
+            region_type = topo["region_type"]
+
+            if region_type == "signal_peptide":
+                continue
+
+            # Check for overlap between construct and topology region
+            overlap_start = max(chain_start, topo_start)
+            overlap_end = min(chain_end, topo_end)
+            if overlap_start <= overlap_end:
+                regions_covered.add(region_type)
+
+    # Generate accessibility warning
+    warning = ""
+    regions_list = sorted(regions_covered)
+
+    if topology and "extracellular" not in regions_covered:
+        if "cytoplasmic" in regions_covered or any("cytoplasmic" in r for r in regions_covered):
+            warning = (
+                f"This structure covers ONLY intracellular/cytoplasmic regions (residues {chain_start}–{chain_end}). "
+                f"De novo protein binders CANNOT access intracellular targets — they act extracellularly. "
+                f"For protein binder design, use structures covering the extracellular domain instead. "
+                f"This structure is suitable for small molecule or degrader design only."
+            )
+        elif "transmembrane" in regions_covered:
+            warning = (
+                f"This structure covers only the transmembrane region. "
+                f"De novo protein binder design requires extracellular domain structures."
+            )
+
+    return ConstructCoverage(
+        pdb_id=pdb_id,
+        chain_residue_start=chain_start,
+        chain_residue_end=chain_end,
+        full_protein_length=seq_length,
+        coverage_fraction=round(coverage_frac, 3),
+        regions_covered=regions_list,
+        accessibility_warning=warning,
+    )
+
 
 def _find_ortholog_residue(
     human_seq: str, mouse_seq: str, human_idx: int, window: int = 7

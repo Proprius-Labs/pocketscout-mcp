@@ -77,6 +77,47 @@ class PDBClient(BaseClient):
         resp = await self.get(f"/rest/v1/core/entry/{pdb_id.upper()}")
         return resp.json()
 
+    async def get_uniprot_residue_range(self, pdb_id: str) -> tuple[int, int] | None:
+        """Get the UniProt residue range covered by a PDB structure.
+
+        Returns (start, end) tuple in UniProt numbering, or None if
+        the mapping can't be determined. Uses the polymer entity
+        alignment data from RCSB.
+        """
+        pdb_id = pdb_id.upper()
+        try:
+            entry = await self.get_entry(pdb_id)
+        except APIError:
+            return None
+
+        entity_ids = entry.get("rcsb_entry_container_identifiers", {}).get(
+            "polymer_entity_ids", []
+        )
+
+        for eid in entity_ids:
+            try:
+                resp = await self.get(f"/rest/v1/core/polymer_entity/{pdb_id}/{eid}")
+                entity = resp.json()
+
+                # Check if this entity maps to UniProt
+                identifiers = entity.get("rcsb_polymer_entity_container_identifiers", {})
+                if not identifiers.get("uniprot_ids"):
+                    continue
+
+                # Get alignment info from reference sequence identifiers
+                align = entity.get("rcsb_polymer_entity_align", [])
+                for a in align:
+                    if a.get("reference_database_name") == "UniProt":
+                        aligned = a.get("aligned_regions", [])
+                        if aligned:
+                            starts = [r.get("ref_beg_seq_id", 0) for r in aligned]
+                            ends = [r.get("ref_beg_seq_id", 0) + r.get("length", 0) - 1 for r in aligned]
+                            return (min(starts), max(ends))
+            except APIError:
+                continue
+
+        return None
+
     async def get_uniprot_mapping(self, pdb_id: str) -> list[str]:
         """Get UniProt accessions mapped to a PDB structure.
 
