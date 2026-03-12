@@ -927,8 +927,27 @@ def _assess_druggability(site_type: str, comp_id: str, num_residues: int = 0) ->
 # ---------------------------------------------------------------------------
 
 def main():
-    """Run the PocketScout MCP server."""
-    mcp.run()
+    """Run the PocketScout MCP server.
+
+    Supports two transport modes:
+      - stdio (default): for local MCP clients like Claude Desktop
+      - http: serves over streamable HTTP for remote access
+
+    Usage:
+      pocketscout-mcp          # stdio mode
+      pocketscout-mcp http     # HTTP mode on port 8000
+    """
+    import sys
+    import os
+
+    transport = sys.argv[1] if len(sys.argv) > 1 else "stdio"
+
+    if transport == "http":
+        host = os.environ.get("HOST", "0.0.0.0")
+        port = int(os.environ.get("PORT", "8000"))
+        mcp.run(transport="streamable-http", host=host, port=port)
+    else:
+        mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":
