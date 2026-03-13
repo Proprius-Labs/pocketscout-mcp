@@ -12,7 +12,7 @@ This manual reconnaissance step is where campaigns quietly go wrong. A scientist
 
 ## The Solution
 
-PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tools to perform systematic binding site intelligence in minutes instead of hours. Six tools compose into a scientific workflow that reflects how expert medicinal chemists actually evaluate targets .
+PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tools to perform systematic binding site intelligence in minutes instead of hours. Six tools compose into a scientific workflow that reflects how expert medicinal chemists actually evaluate targets.
 
 ## Tools
 
