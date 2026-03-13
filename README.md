@@ -204,7 +204,7 @@ MIT
 
 ## Author
 
-**Paul Mangiamele, PhD** — Staff Creative Technologist, AWS Applied AI
-[Proprius Labs](https://proprius.ai) · [LinkedIn](https://linkedin.com/in/pmangiamele)
+**Paul Mangiamele, PhD**
+[Proprius Labs](https://propriuslabs.ai) · [LinkedIn](https://www.linkedin.com/in/paulmm/)
 
 *Built with [FastMCP](https://gofastmcp.com) and informed by 90+ interviews with drug discovery scientists.*
