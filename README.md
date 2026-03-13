@@ -31,21 +31,21 @@ PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tool
 
 ## Quickstart
 
-### Install
+### Use instantly on claude.ai (no install)
+
+PocketScout is hosted and ready to use:
+
+1. Go to **claude.ai → Settings → Connectors → Add custom connector**
+2. Enter: `https://pocketscout-mcp.up.railway.app/mcp`
+3. Ask Claude:
+
+> "Assess KRAS G12C (PDB 6OIM) as a target for de novo protein binder design. Where are the best pockets, and what should I watch out for?"
+
+### Use with Claude Code
 
 ```bash
-pip install pocketscout-mcp
+claude mcp add pocketscout --transport http https://pocketscout-mcp.up.railway.app/mcp
 ```
-
-Or install from source:
-
-```bash
-git clone https://github.com/paulmm/pocketscout-mcp.git
-cd pocketscout-mcp
-pip install -e .
-```
-
-> **Requires Python 3.11+.** If your system Python is older, use [uv](https://docs.astral.sh/uv/): `uv pip install pocketscout-mcp`
 
 ### Use with Claude Desktop
 
@@ -58,27 +58,46 @@ Add to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "pocketscout": {
-      "command": "python3",
-      "args": ["-m", "pocketscout_mcp.server"]
+      "url": "https://pocketscout-mcp.up.railway.app/mcp"
     }
   }
 }
 ```
 
-> **Tip**: If you installed in a virtual environment, use the full path to that Python:
-> `"command": "/path/to/venv/bin/python3"`
+Restart Claude Desktop, then ask Claude to assess a target.
 
-Restart Claude Desktop. Then ask:
+### Install locally (optional)
 
-> "Assess PDB 1M17 as a target for de novo binder design in oncology"
-
-Claude will orchestrate all six tools and deliver a binding site assessment.
-
-### Use with Claude Code
+If you prefer to run the server yourself:
 
 ```bash
-claude mcp add pocketscout -- python3 -m pocketscout_mcp.server
+pip install pocketscout-mcp
 ```
+
+Or from source:
+
+```bash
+git clone https://github.com/Proprius-Labs/pocketscout-mcp.git
+cd pocketscout-mcp
+pip install -e .
+```
+
+> **Requires Python 3.11+.** If your system Python is older, use [uv](https://docs.astral.sh/uv/): `uv pip install pocketscout-mcp`
+
+Then configure Claude Desktop to run locally:
+
+```json
+{
+  "mcpServers": {
+    "pocketscout": {
+      "command": "pocketscout-mcp"
+    }
+  }
+}
+```
+
+> **Tip**: If you installed in a virtual environment, use the full path:
+> `"command": "/path/to/venv/bin/pocketscout-mcp"`
 
 ### Test with MCP Inspector
 
@@ -186,6 +205,6 @@ MIT
 ## Author
 
 **Paul Mangiamele, PhD** — Staff Creative Technologist, AWS Applied AI
-[Proprious Labs](https://propriouslabs.com) · [LinkedIn](https://linkedin.com/in/pmangiamele)
+[Proprius Labs](https://proprius.ai) · [LinkedIn](https://linkedin.com/in/pmangiamele)
 
 *Built with [FastMCP](https://gofastmcp.com) and informed by 90+ interviews with drug discovery scientists.*
