@@ -4,36 +4,9 @@
 
 An MCP server that aggregates structural, chemical, and literature data to evaluate druggable pockets on protein targets — filling the gap between *"I have a target"* and *"I'm running RFdiffusion."*
 
-## The Problem
-
-Drug discovery scientists spend hours to days manually gathering information across 6-10 browser tabs before they can make an informed decision about where on a protein to design a binder. They check UniProt for function, browse PDB for structures, search ChEMBL for prior art, read papers for allosteric insights — and then synthesize it all in their heads.
-
-This manual reconnaissance step is where campaigns quietly go wrong. A scientist picks the obvious orthosteric site without checking that 200 compounds have already failed there. They miss an allosteric pocket described in a 2023 paper. They don't realize the binding site residues aren't conserved in mouse until their in vivo model fails.
-
-## The Solution
-
-PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tools to perform systematic binding site intelligence in minutes instead of hours. Six tools compose into a scientific workflow that reflects how expert medicinal chemists actually evaluate targets.
-
-## Tools
-
-| Tool | What it does | Key APIs |
-|------|-------------|----------|
-| `characterize_target` | Biological context + AlphaFold confidence | UniProt, AlphaFold DB |
-| `get_related_structures` | All PDB structures, ligands, quality | RCSB PDB Search |
-| `get_binding_sites` | Map known pockets with residue contacts | RCSB PDB Data + gemmi |
-| `get_ligand_history` | Competitive landscape from bioactivity data | ChEMBL |
-| `check_conservation` | Human vs. mouse at binding residues | UniProt Orthologs |
-| `search_target_literature` | Structural/design-focused papers | PubMed E-utilities |
-
-### Orchestration Prompt
-
-`binding_site_assessment` — Guides the AI through all six tools in scientific workflow order, producing a ranked recommendation of binding regions with evidence, trade-offs, and design parameters.
-
-## Quickstart
+## Get Started
 
 ### Use instantly on claude.ai (no install)
-
-PocketScout is hosted and ready to use:
 
 1. Go to **claude.ai → Settings → Connectors → Add custom connector**
 2. Enter: `https://pocketscout-mcp.up.railway.app/mcp`
@@ -65,6 +38,33 @@ Add to your `claude_desktop_config.json`:
 ```
 
 Restart Claude Desktop, then ask Claude to assess a target.
+
+---
+
+## The Problem
+
+Drug discovery scientists spend hours to days manually gathering information across 6-10 browser tabs before they can make an informed decision about where on a protein to design a binder. They check UniProt for function, browse PDB for structures, search ChEMBL for prior art, read papers for allosteric insights — and then synthesize it all in their heads.
+
+This manual reconnaissance step is where campaigns quietly go wrong. A scientist picks the obvious orthosteric site without checking that 200 compounds have already failed there. They miss an allosteric pocket described in a 2023 paper. They don't realize the binding site residues aren't conserved in mouse until their in vivo model fails.
+
+## The Solution
+
+PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tools to perform systematic binding site intelligence in minutes instead of hours. Six tools compose into a scientific workflow that reflects how expert medicinal chemists actually evaluate targets.
+
+## Tools
+
+| Tool | What it does | Key APIs |
+|------|-------------|----------|
+| `characterize_target` | Biological context + AlphaFold confidence | UniProt, AlphaFold DB |
+| `get_related_structures` | All PDB structures, ligands, quality | RCSB PDB Search |
+| `get_binding_sites` | Map known pockets with residue contacts | RCSB PDB Data + gemmi |
+| `get_ligand_history` | Competitive landscape from bioactivity data | ChEMBL |
+| `check_conservation` | Human vs. mouse at binding residues | UniProt Orthologs |
+| `search_target_literature` | Structural/design-focused papers | PubMed E-utilities |
+
+### Orchestration Prompt
+
+`binding_site_assessment` — Guides the AI through all six tools in scientific workflow order, producing a ranked recommendation of binding regions with evidence, trade-offs, and design parameters.
 
 ### Install locally (optional)
 
