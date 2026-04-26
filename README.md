@@ -9,8 +9,9 @@ An MCP server that aggregates structural, chemical, and literature data to evalu
 ### Use instantly on claude.ai (no install)
 
 1. Go to [claude.ai → Customize → Connectors → **+**](https://claude.ai/customize/connectors)
-2. Enter: `https://pocketscout-mcp.up.railway.app/mcp`
-3. Ask Claude:
+2. Name: `PocketScout`
+3. URL: `https://pocketscout-mcp.up.railway.app/mcp`
+4. Ask Claude:
 
 > "Assess KRAS G12C (PDB 6OIM) as a target for de novo protein binder design. Where are the best pockets, and what should I watch out for?"
 
