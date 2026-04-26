@@ -22,6 +22,7 @@ ranked recommendation.
 from __future__ import annotations
 
 from fastmcp import FastMCP
+from mcp.types import Icon
 
 from .clients.uniprot import UniProtClient, parse_target_profile
 from .clients.pdb import PDBClient, parse_structure_metadata, ARTIFACT_LIGANDS
@@ -50,6 +51,9 @@ from .models import (
 # Server + clients
 # ---------------------------------------------------------------------------
 
+ICON_URL = "https://raw.githubusercontent.com/paulmm/pocketscout-mcp/main/assets/icon.svg"
+ICONS = [Icon(src=ICON_URL, mimeType="image/svg+xml")]
+
 mcp = FastMCP(
     "PocketScout",
     instructions=(
@@ -58,6 +62,7 @@ mcp = FastMCP(
         "druggable pockets before computational design. "
         "Use the binding_site_assessment prompt for a complete workflow."
     ),
+    icons=ICONS,
 )
 
 uniprot = UniProtClient()
@@ -87,7 +92,19 @@ async def _resolve_identifiers(pdb_id: str | None = None, uniprot_id: str | None
 # Tool 1: characterize_target
 # ---------------------------------------------------------------------------
 
-@mcp.tool
+READ_ONLY_ANNOTATIONS = {
+    "readOnlyHint": True,
+    "destructiveHint": False,
+    "idempotentHint": True,
+    "openWorldHint": True,
+}
+
+
+@mcp.tool(
+    title="Characterize Target",
+    tags={"target-profile", "structure"},
+    annotations=READ_ONLY_ANNOTATIONS,
+)
 async def characterize_target(
     pdb_id: str | None = None,
     uniprot_id: str | None = None,
@@ -157,7 +174,11 @@ async def characterize_target(
 # Tool 2: get_related_structures
 # ---------------------------------------------------------------------------
 
-@mcp.tool
+@mcp.tool(
+    title="Get Related Structures",
+    tags={"structure"},
+    annotations=READ_ONLY_ANNOTATIONS,
+)
 async def get_related_structures(
     pdb_id: str | None = None,
     uniprot_id: str | None = None,
@@ -288,7 +309,11 @@ async def get_related_structures(
 # Tool 3: get_binding_sites
 # ---------------------------------------------------------------------------
 
-@mcp.tool
+@mcp.tool(
+    title="Get Binding Sites",
+    tags={"structure", "binding-site"},
+    annotations=READ_ONLY_ANNOTATIONS,
+)
 async def get_binding_sites(pdb_id: str) -> dict:
     """Map all known binding sites in a protein structure from co-crystallized ligands.
 
@@ -417,7 +442,11 @@ async def get_binding_sites(pdb_id: str) -> dict:
 # Tool 4: get_ligand_history
 # ---------------------------------------------------------------------------
 
-@mcp.tool
+@mcp.tool(
+    title="Get Ligand History",
+    tags={"chemistry", "competitive-landscape"},
+    annotations=READ_ONLY_ANNOTATIONS,
+)
 async def get_ligand_history(
     uniprot_id: str | None = None,
     pdb_id: str | None = None,
@@ -480,7 +509,11 @@ async def get_ligand_history(
 # Tool 5: check_conservation
 # ---------------------------------------------------------------------------
 
-@mcp.tool
+@mcp.tool(
+    title="Check Conservation",
+    tags={"conservation", "translatability"},
+    annotations=READ_ONLY_ANNOTATIONS,
+)
 async def check_conservation(
     uniprot_id: str,
     residue_positions: list[int],
@@ -600,7 +633,11 @@ async def check_conservation(
 # Tool 6: search_target_literature
 # ---------------------------------------------------------------------------
 
-@mcp.tool
+@mcp.tool(
+    title="Search Target Literature",
+    tags={"literature"},
+    annotations=READ_ONLY_ANNOTATIONS,
+)
 async def search_target_literature(
     gene_name: str,
     context: str | None = None,
