@@ -23,6 +23,8 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 from mcp.types import Icon
+from starlette.requests import Request
+from starlette.responses import Response
 
 from .clients.uniprot import UniProtClient, parse_target_profile
 from .clients.pdb import PDBClient, parse_structure_metadata, ARTIFACT_LIGANDS
@@ -51,8 +53,31 @@ from .models import (
 # Server + clients
 # ---------------------------------------------------------------------------
 
-ICON_URL = "https://raw.githubusercontent.com/paulmm/pocketscout-mcp/main/assets/icon.svg"
+ICON_URL = "https://raw.githubusercontent.com/Proprius-Labs/pocketscout-mcp/main/assets/icon.svg"
 ICONS = [Icon(src=ICON_URL, mimeType="image/svg+xml")]
+
+ICON_SVG = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="PocketScout">
+  <style>
+    svg { color: #1a1a1a; }
+    @media (prefers-color-scheme: dark) {
+      svg { color: #f5f5f5; }
+    }
+  </style>
+  <line x1="12" y1="2.5" x2="12" y2="5"/>
+  <line x1="12" y1="19" x2="12" y2="23"/>
+  <line x1="1" y1="12" x2="6" y2="12"/>
+  <line x1="18" y1="12" x2="23" y2="12"/>
+  <polygon points="12,0.5 10.5,2.5 13.5,2.5" fill="currentColor" stroke="none"/>
+  <polygon points="12,5 18,8.5 18,15.5 12,19 6,15.5 6,8.5"/>
+  <circle cx="18" cy="8.5" r="0.7" fill="currentColor" stroke="none"/>
+  <circle cx="12" cy="19" r="0.7" fill="currentColor" stroke="none"/>
+  <circle cx="6" cy="15.5" r="0.7" fill="currentColor" stroke="none"/>
+  <circle cx="6" cy="8.5" r="0.7" fill="currentColor" stroke="none"/>
+  <circle cx="12" cy="5" r="1.2" fill="#0D9488" stroke="none"/>
+  <circle cx="18" cy="15.5" r="1.2" fill="#0D9488" stroke="none"/>
+  <circle cx="12" cy="12" r="2" stroke="#D97706" stroke-width="0.6" fill="none"/>
+  <circle cx="12" cy="12" r="0.95" fill="#D97706" stroke="none"/>
+</svg>"""
 
 mcp = FastMCP(
     "PocketScout",
@@ -64,6 +89,16 @@ mcp = FastMCP(
     ),
     icons=ICONS,
 )
+
+
+@mcp.custom_route("/favicon.ico", methods=["GET"], include_in_schema=False)
+@mcp.custom_route("/favicon.svg", methods=["GET"], include_in_schema=False)
+async def favicon(request: Request) -> Response:
+    return Response(
+        content=ICON_SVG,
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 uniprot = UniProtClient()
 pdb = PDBClient()
