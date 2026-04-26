@@ -136,6 +136,7 @@ READ_ONLY_ANNOTATIONS = {
 
 
 @mcp.tool(
+    name="CharacterizeTarget",
     title="Characterize Target",
     tags={"target-profile", "structure"},
     annotations=READ_ONLY_ANNOTATIONS,
@@ -210,6 +211,7 @@ async def characterize_target(
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
+    name="GetRelatedStructures",
     title="Get Related Structures",
     tags={"structure"},
     annotations=READ_ONLY_ANNOTATIONS,
@@ -345,6 +347,7 @@ async def get_related_structures(
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
+    name="GetBindingSites",
     title="Get Binding Sites",
     tags={"structure", "binding-site"},
     annotations=READ_ONLY_ANNOTATIONS,
@@ -478,6 +481,7 @@ async def get_binding_sites(pdb_id: str) -> dict:
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
+    name="GetLigandHistory",
     title="Get Ligand History",
     tags={"chemistry", "competitive-landscape"},
     annotations=READ_ONLY_ANNOTATIONS,
@@ -545,6 +549,7 @@ async def get_ligand_history(
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
+    name="CheckConservation",
     title="Check Conservation",
     tags={"conservation", "translatability"},
     annotations=READ_ONLY_ANNOTATIONS,
@@ -669,6 +674,7 @@ async def check_conservation(
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
+    name="SearchTargetLiterature",
     title="Search Target Literature",
     tags={"literature"},
     annotations=READ_ONLY_ANNOTATIONS,
