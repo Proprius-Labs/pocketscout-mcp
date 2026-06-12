@@ -191,7 +191,11 @@ async def characterize_target(
     # Fetch AlphaFold confidence
     try:
         af_prediction = await alphafold.get_prediction(uniprot_id)
-        af_data = analyze_confidence(af_prediction, profile_data["sequence_length"])
+        try:
+            per_residue = await alphafold.get_per_residue_plddt(uniprot_id)
+        except APIError:
+            per_residue = []
+        af_data = analyze_confidence(af_prediction, profile_data["sequence_length"], per_residue or None)
     except APIError:
         af_data = {
             "overall_confidence": None,
