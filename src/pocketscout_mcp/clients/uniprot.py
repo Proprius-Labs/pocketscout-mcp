@@ -13,8 +13,7 @@ class UniProtClient(BaseClient):
 
     async def get_entry(self, accession: str) -> dict:
         """Fetch a full UniProt entry as JSON."""
-        resp = await self.get(f"/uniprotkb/{accession}.json")
-        return resp.json()
+        return await self.get_json(f"/uniprotkb/{accession}.json")
 
     async def get_sequence(self, accession: str) -> str:
         """Fetch the amino acid sequence for a UniProt accession."""

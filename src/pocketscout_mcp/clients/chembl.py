@@ -26,7 +26,7 @@ class ChEMBLClient(BaseClient):
         Returns the first matching ChEMBL target record, or None.
         """
         try:
-            resp = await self.get(
+            data = await self.get_json(
                 "/target.json",
                 params={
                     "target_components__accession": uniprot_id,
@@ -36,7 +36,6 @@ class ChEMBLClient(BaseClient):
         except APIError:
             return None
 
-        data = resp.json()
         targets = data.get("targets", [])
         return targets[0] if targets else None
 
@@ -51,7 +50,7 @@ class ChEMBLClient(BaseClient):
         targets, this may be a subset of all available data.
         """
         try:
-            resp = await self.get(
+            data = await self.get_json(
                 "/activity.json",
                 params={
                     "target_chembl_id": chembl_target_id,
@@ -62,7 +61,6 @@ class ChEMBLClient(BaseClient):
         except APIError:
             return []
 
-        data = resp.json()
         return data.get("activities", [])
 
     async def get_clinical_candidates(self, chembl_target_id: str) -> list[dict]:
@@ -71,7 +69,7 @@ class ChEMBLClient(BaseClient):
         Enriches with molecule preferred names via batch lookup.
         """
         try:
-            resp = await self.get(
+            data = await self.get_json(
                 "/mechanism.json",
                 params={
                     "target_chembl_id": chembl_target_id,
@@ -81,7 +79,6 @@ class ChEMBLClient(BaseClient):
         except APIError:
             return []
 
-        data = resp.json()
         mechanisms = data.get("mechanisms", [])
 
         # Collect unique molecule IDs for name resolution
@@ -95,8 +92,7 @@ class ChEMBLClient(BaseClient):
         name_map: dict[str, str] = {}
         for mol_id in unique_mol_ids[:20]:
             try:
-                mol_resp = await self.get(f"/molecule/{mol_id}.json")
-                mol_data = mol_resp.json()
+                mol_data = await self.get_json(f"/molecule/{mol_id}.json")
                 pref_name = mol_data.get("pref_name")
                 if pref_name:
                     name_map[mol_id] = pref_name

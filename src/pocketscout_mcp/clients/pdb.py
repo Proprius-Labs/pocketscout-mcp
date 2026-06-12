@@ -74,8 +74,7 @@ class PDBClient(BaseClient):
 
     async def get_entry(self, pdb_id: str) -> dict:
         """Fetch core entry metadata for a PDB structure."""
-        resp = await self.get(f"/rest/v1/core/entry/{pdb_id.upper()}")
-        return resp.json()
+        return await self.get_json(f"/rest/v1/core/entry/{pdb_id.upper()}")
 
     async def get_uniprot_residue_range(self, pdb_id: str) -> tuple[int, int] | None:
         """Get the UniProt residue range covered by a PDB structure.
@@ -96,8 +95,7 @@ class PDBClient(BaseClient):
 
         for eid in entity_ids:
             try:
-                resp = await self.get(f"/rest/v1/core/polymer_entity/{pdb_id}/{eid}")
-                entity = resp.json()
+                entity = await self.get_json(f"/rest/v1/core/polymer_entity/{pdb_id}/{eid}")
 
                 # Check if this entity maps to UniProt
                 identifiers = entity.get("rcsb_polymer_entity_container_identifiers", {})
@@ -135,8 +133,7 @@ class PDBClient(BaseClient):
 
         for eid in entity_ids:
             try:
-                resp = await self.get(f"/rest/v1/core/polymer_entity/{pdb_id}/{eid}")
-                entity = resp.json()
+                entity = await self.get_json(f"/rest/v1/core/polymer_entity/{pdb_id}/{eid}")
                 # UniProt references are in rcsb_polymer_entity_container_identifiers
                 identifiers = entity.get("rcsb_polymer_entity_container_identifiers", {})
                 uniprot_ids = identifiers.get("uniprot_ids", [])
@@ -204,8 +201,7 @@ class PDBClient(BaseClient):
         entities = []
         for eid in entity_ids:
             try:
-                resp = await self.get(f"/rest/v1/core/nonpolymer_entity/{pdb_id}/{eid}")
-                entities.append(resp.json())
+                entities.append(await self.get_json(f"/rest/v1/core/nonpolymer_entity/{pdb_id}/{eid}"))
             except APIError:
                 continue
         return entities

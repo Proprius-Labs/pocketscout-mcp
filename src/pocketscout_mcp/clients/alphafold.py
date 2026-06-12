@@ -19,8 +19,7 @@ class AlphaFoldClient(BaseClient):
 
         The API returns a list — we take the first element (latest model).
         """
-        resp = await self.get(f"/api/prediction/{uniprot_id}")
-        data = resp.json()
+        data = await self.get_json(f"/api/prediction/{uniprot_id}")
         # API returns a list; take the first (latest) prediction
         if isinstance(data, list):
             if not data:

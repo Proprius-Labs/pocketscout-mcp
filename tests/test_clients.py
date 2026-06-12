@@ -422,3 +422,17 @@ async def test_get_json_distinct_params_not_shared():
     assert await client.get_json("/uniprotkb/search", params={"query": "b"}) == {"q": "b"}
     assert r1.call_count == 1 and r2.call_count == 1
     await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_pdb_get_entry_cached():
+    fixture = load_fixture("pdb_1M17_entry.json")
+    route = respx.get("https://data.rcsb.org/rest/v1/core/entry/1M17").mock(
+        return_value=httpx.Response(200, json=fixture)
+    )
+    client = PDBClient()
+    await client.get_entry("1M17")
+    await client.get_entry("1M17")
+    assert route.call_count == 1
+    await client.close()
