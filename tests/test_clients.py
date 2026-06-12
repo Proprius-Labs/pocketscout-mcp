@@ -352,16 +352,16 @@ class TestConservationHelper:
     def test_find_ortholog_residue_identical_sequences(self):
         from pocketscout_mcp.server import _find_ortholog_residue
         seq = "MADEKVLR"
-        result = _find_ortholog_residue(seq, seq, 3)
-        assert result == "E"
+        res, _ = _find_ortholog_residue(seq, seq, 3)
+        assert res == "E"
 
     def test_find_ortholog_residue_with_insertion(self):
         from pocketscout_mcp.server import _find_ortholog_residue
         human = "MADEKVLRST"
         mouse = "MADXXEKVLRST"  # 2-residue insertion
         # Position 3 in human (E) should map to position 5 in mouse (E)
-        result = _find_ortholog_residue(human, mouse, 3)
-        assert result == "E"
+        res, _ = _find_ortholog_residue(human, mouse, 3)
+        assert res == "E"
 
 
 # ---- Integration: Site classification ----
@@ -518,3 +518,18 @@ async def test_get_per_residue_plddt_swallows_network_error():
     client = AlphaFoldClient()
     assert await client.get_per_residue_plddt("P00533") == []
     await client.close()
+
+
+# ---- Conservation helper: tuple return ----
+
+
+def test_find_ortholog_residue_returns_score():
+    from pocketscout_mcp.server import _find_ortholog_residue
+    res, score = _find_ortholog_residue("MADEKVLR", "MADEKVLR", 3)
+    assert res == "E" and score == 1.0
+
+
+def test_find_ortholog_residue_low_score_on_mismatch():
+    from pocketscout_mcp.server import _find_ortholog_residue
+    res, score = _find_ortholog_residue("MADEKVLRST", "WWWWWWWWWW", 3)
+    assert score < 0.5

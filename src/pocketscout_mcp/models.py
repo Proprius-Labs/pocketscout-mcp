@@ -189,6 +189,10 @@ class ResidueConservation(BaseModel):
         default=False,
         description="If not identical, whether the substitution preserves physicochemical properties (e.g. Leu→Ile, Asp→Glu)"
     )
+    mapping_uncertain: bool = Field(
+        default=False,
+        description="True when the human→ortholog residue mapping was made on a weak local-context match and should not be trusted."
+    )
 
 
 class ConservationResult(BaseModel):

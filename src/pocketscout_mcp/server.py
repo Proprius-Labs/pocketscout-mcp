@@ -634,13 +634,17 @@ async def check_conservation(
     # find where it occurs in the mouse sequence, then compare the central residue.
     conserved_count = 0
     non_conserved = []
+    uncertain_count = 0
 
     for pos in residue_positions:
         idx = pos - 1  # Convert to 0-based
         human_res = human_seq[idx] if idx < len(human_seq) else "?"
 
         # Find the corresponding mouse residue by context matching
-        mouse_res = _find_ortholog_residue(human_seq, mouse_seq, idx)
+        mouse_res, map_score = _find_ortholog_residue(human_seq, mouse_seq, idx)
+        uncertain = map_score < 0.5
+        if uncertain:
+            uncertain_count += 1
 
         is_same = human_res == mouse_res
         is_conservative = _is_conservative_substitution(human_res, mouse_res)
@@ -654,6 +658,7 @@ async def check_conservation(
                 mouse_residue=mouse_res,
                 is_conserved=False,
                 is_conservative_substitution=is_conservative,
+                mapping_uncertain=uncertain,
             ))
 
     fraction = conserved_count / len(residue_positions) if residue_positions else 0.0
@@ -675,6 +680,9 @@ async def check_conservation(
             "Mouse efficacy models may not predict human response. Consider cynomolgus monkey, "
             "humanized mouse models, or other species with better conservation."
         )
+
+    if uncertain_count > 0:
+        interp += f" {uncertain_count} position(s) had low-confidence ortholog mapping — treat those calls cautiously."
 
     result = ConservationResult(
         human_uniprot=uniprot_id,
@@ -914,22 +922,30 @@ async def _compute_construct_coverage(pdb_id: str) -> ConstructCoverage | None:
 
 def _find_ortholog_residue(
     human_seq: str, mouse_seq: str, human_idx: int, window: int = 7
-) -> str:
+) -> tuple[str, float]:
     """Find the mouse residue corresponding to a human sequence position.
 
     Uses local context matching: extracts a window around the human position,
     searches for the best match in the mouse sequence, and returns the
     corresponding central residue. This handles insertions/deletions that
     shift numbering between orthologs.
+
+    Returns a tuple of (residue, match_fraction) where match_fraction is
+    the fraction of the context window that matched at the best position.
+    A low match_fraction (<0.5) indicates an uncertain mapping.
     """
     if human_idx >= len(human_seq):
-        return "?"
+        return "?", 0.0
 
     # Extract context window from human sequence
     start = max(0, human_idx - window)
     end = min(len(human_seq), human_idx + window + 1)
     human_context = human_seq[start:end]
     offset_in_context = human_idx - start
+
+    # Guard against empty context (degenerate case)
+    if len(human_context) == 0:
+        return "?", 0.0
 
     # Search for best matching position in mouse sequence
     best_score = -1
@@ -948,9 +964,11 @@ def _find_ortholog_residue(
             best_score = score
             best_mouse_idx = i + offset_in_context
 
+    match_fraction = round(best_score / len(human_context), 3) if best_score >= 0 else 0.0
+
     if best_mouse_idx < len(mouse_seq):
-        return mouse_seq[best_mouse_idx]
-    return "?"
+        return mouse_seq[best_mouse_idx], match_fraction
+    return "?", match_fraction
 
 
 # Conservative amino acid substitution groups
