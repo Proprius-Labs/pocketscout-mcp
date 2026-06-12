@@ -62,6 +62,7 @@ async def test_check_known_variants_tool():
     result = await server.check_known_variants(uniprot_id="P00533", residue_positions=[790])
     assert result["positions_checked"] == 1
     assert isinstance(result["variants"], list)
+    assert any(v["position"] == 790 for v in result["variants"])
 
 
 @respx.mock

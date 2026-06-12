@@ -221,7 +221,7 @@ class ConservationResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Tool 6: search_target_literature
+# CheckKnownVariants tool
 # ---------------------------------------------------------------------------
 
 class KnownVariant(BaseModel):
@@ -270,7 +270,7 @@ class LiteratureResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Tool: consolidate_binding_sites
+# ConsolidateBindingSites tool
 # ---------------------------------------------------------------------------
 
 class ConsolidatedPocket(BaseModel):

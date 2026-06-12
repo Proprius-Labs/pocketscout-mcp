@@ -1177,12 +1177,12 @@ async def _compute_construct_coverage(pdb_id: str) -> ConstructCoverage | None:
 
 
 def _find_ortholog_residue(
-    human_seq: str, mouse_seq: str, human_idx: int, window: int = 7
+    human_seq: str, ortholog_seq: str, human_idx: int, window: int = 7
 ) -> tuple[str, float]:
-    """Find the mouse residue corresponding to a human sequence position.
+    """Find the ortholog residue corresponding to a human sequence position.
 
     Uses local context matching: extracts a window around the human position,
-    searches for the best match in the mouse sequence, and returns the
+    searches for the best match in the ortholog sequence, and returns the
     corresponding central residue. This handles insertions/deletions that
     shift numbering between orthologs.
 
@@ -1203,27 +1203,27 @@ def _find_ortholog_residue(
     if len(human_context) == 0:
         return "?", 0.0
 
-    # Search for best matching position in mouse sequence
+    # Search for best matching position in ortholog sequence
     best_score = -1
-    best_mouse_idx = human_idx  # fallback to same position
+    best_ortholog_idx = human_idx  # fallback to same position
 
     # Search within a reasonable range around the expected position
     search_start = max(0, human_idx - 50)
-    search_end = min(len(mouse_seq) - len(human_context) + 1, human_idx + 50)
+    search_end = min(len(ortholog_seq) - len(human_context) + 1, human_idx + 50)
 
     for i in range(search_start, search_end):
-        mouse_window = mouse_seq[i:i + len(human_context)]
-        if len(mouse_window) < len(human_context):
+        ortholog_window = ortholog_seq[i:i + len(human_context)]
+        if len(ortholog_window) < len(human_context):
             continue
-        score = sum(1 for a, b in zip(human_context, mouse_window) if a == b)
+        score = sum(1 for a, b in zip(human_context, ortholog_window) if a == b)
         if score > best_score:
             best_score = score
-            best_mouse_idx = i + offset_in_context
+            best_ortholog_idx = i + offset_in_context
 
     match_fraction = round(best_score / len(human_context), 3) if best_score >= 0 else 0.0
 
-    if best_mouse_idx < len(mouse_seq):
-        return mouse_seq[best_mouse_idx], match_fraction
+    if best_ortholog_idx < len(ortholog_seq):
+        return ortholog_seq[best_ortholog_idx], match_fraction
     return "?", match_fraction
 
 

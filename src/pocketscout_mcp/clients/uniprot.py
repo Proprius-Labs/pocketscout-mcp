@@ -79,7 +79,7 @@ def parse_known_variants(entry: dict, positions: set[int]) -> list[dict]:
             continue
         loc = feat.get("location", {})
         start = loc.get("start", {}).get("value")
-        end = loc.get("end", {}).get("value", start)
+        end = loc.get("end", {}).get("value") or start
         if start is None:
             continue
         if not any(start <= p <= end for p in positions):

@@ -50,7 +50,7 @@ This manual triage step is where campaigns quietly go wrong. A scientist picks t
 
 ## The Solution
 
-PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tools to perform systematic binding site triage in minutes instead of hours — whether you're screening a target for the first time, briefing a new team member, or preparing a computational design campaign. Six tools compose into a scientific workflow that reflects how expert medicinal chemists actually evaluate targets.
+PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tools to perform systematic binding site triage in minutes instead of hours — whether you're screening a target for the first time, briefing a new team member, or preparing a computational design campaign. Eight tools compose into a scientific workflow that reflects how expert medicinal chemists actually evaluate targets.
 
 ## Tools
 
@@ -112,7 +112,7 @@ fastmcp dev src/pocketscout_mcp/server.py
 
 ## Design Decisions
 
-### Why these six tools?
+### Why these tools?
 
 The tool set reflects the actual decision workflow of an experienced drug discovery scientist evaluating a new target. Each tool answers a specific question that gates the next decision:
 
@@ -128,6 +128,10 @@ The tool set reflects the actual decision workflow of an experienced drug discov
 
 6. **search_target_literature**: *"What do the experts know that the databases don't?"* — Cryptic sites from MD simulations, allosteric mechanisms from mutagenesis studies, resistance mutations that reshape pockets — these insights live in papers, not databases.
 
+7. **check_known_variants**: *"Will this pocket mutate out from under me?"* — Binding-site residues that are documented resistance/disease variants (e.g. EGFR T790M) flag pockets that change under drug pressure.
+
+8. **consolidate_binding_sites**: *"Which pocket is real and recurrent?"* — Unions pockets across all structures of a target so the dominant, repeatedly-observed site stands out from one-offs.
+
 ### Why not include pocket prediction?
 
 Tools like fpocket, P2Rank, and SiteMap predict novel binding sites computationally. These are valuable but require computational infrastructure (CPU/GPU) that doesn't fit the MCP model of lightweight API-based tools. PocketScout focuses on *known* binding intelligence from experimental data and literature. Pocket prediction belongs in a separate compute-oriented server.
@@ -136,9 +140,9 @@ Tools like fpocket, P2Rank, and SiteMap predict novel binding sites computationa
 
 Each tool returns both raw data and an `interpretation` field with scientific context. This is a deliberate design choice: the interpretation encodes domain expertise that helps the AI make better reasoning decisions. A raw list of ChEMBL activities is harder for Claude to reason about than a structured competitive landscape assessment.
 
-### Why simplified conservation (human vs. mouse only)?
+### Why local-context conservation across mouse, rat, and cynomolgus?
 
-Full multi-species conservation requires multiple sequence alignment, which is computationally expensive and error-prone without proper gap handling. Human vs. mouse covers the most critical preclinical translatability question. The approach uses local context matching (sliding window) to handle insertions/deletions between orthologs, providing accurate residue correspondence without requiring a full MSA or BioPython dependency.
+Full multi-species conservation requires multiple sequence alignment, which is computationally expensive and error-prone without proper gap handling. The tool now checks three preclinical model organisms — mouse (NCBI taxonomy 10090), rat (10116), and cynomolgus macaque (9541) — covering both rodent and non-human primate translatability questions in a single call. Each species is assessed independently using local-context (sliding-window) matching to handle insertions/deletions between the human and ortholog sequences, providing accurate residue correspondence without requiring a full MSA or a BioPython dependency. The tool is deliberately kept lightweight: no MSA, no external alignment tools, no heavy dependencies.
 
 ## Architecture
 
@@ -162,6 +166,12 @@ Claude (or any MCP client)
   │
   ├── check_conservation(uniprot_id="...", residues=[...])
   │     └── UniProt Orthologs
+  │
+  ├── check_known_variants(uniprot_id="...", residues=[...])
+  │     └── UniProt variants
+  │
+  ├── consolidate_binding_sites(uniprot_id="...")
+  │     └── RCSB PDB + gemmi (cross-structure)
   │
   └── search_target_literature(gene_name="...")
         └── PubMed E-utilities
@@ -187,7 +197,7 @@ export NCBI_API_KEY=your_key_here
 ## Limitations
 
 - **No pocket prediction**: PocketScout reports *known* binding sites from experimental structures. Novel/cryptic site prediction requires computational tools not included here.
-- **Simplified conservation**: Human vs. mouse comparison using local context matching. Handles indels but not a full MSA — accurate for most drug targets.
+- **Simplified conservation**: Human vs. mouse, rat, and cynomolgus comparison using local context matching. Handles indels but not a full MSA — accurate for most drug targets.
 - **Public data only**: All data comes from public APIs (UniProt, PDB, ChEMBL, PubMed, AlphaFold DB). Proprietary databases are not accessed.
 
 ## Roadmap
