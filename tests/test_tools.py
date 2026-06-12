@@ -35,6 +35,25 @@ async def test_related_structures_sets_organism():
 
 @respx.mock
 @pytest.mark.asyncio
+async def test_check_conservation_multispecies(monkeypatch):
+    from pocketscout_mcp import server
+    respx.get("https://rest.uniprot.org/uniprotkb/P00533.json").mock(
+        return_value=httpx.Response(200, json=load("uniprot_P00533.json"))
+    )
+    async def fake_ortholog(acc, org): return {10090: "MOUSE1", 10116: "RAT1", 9541: "CYNO1"}.get(org)
+    async def fake_seq(acc):
+        full = (await server.uniprot.get_entry("P00533"))["sequence"]["value"]
+        return full
+    monkeypatch.setattr(server.uniprot, "get_ortholog", fake_ortholog)
+    monkeypatch.setattr(server.uniprot, "get_sequence", fake_seq)
+    result = await server.check_conservation(uniprot_id="P00533", residue_positions=[718, 745])
+    species = {s["species"] for s in result["species_results"]}
+    assert species == {"mouse", "rat", "cynomolgus"}
+    assert all(s["conservation_fraction"] == 1.0 for s in result["species_results"])  # identical seqs
+
+
+@respx.mock
+@pytest.mark.asyncio
 async def test_characterize_uses_per_residue_when_available(monkeypatch):
     from pocketscout_mcp import server
     respx.get("https://rest.uniprot.org/uniprotkb/P01116.json").mock(

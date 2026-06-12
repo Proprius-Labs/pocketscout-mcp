@@ -180,11 +180,11 @@ class LigandHistory(BaseModel):
 # ---------------------------------------------------------------------------
 
 class ResidueConservation(BaseModel):
-    """Conservation status of a single residue between human and mouse."""
+    """Conservation status of a single residue between human and an ortholog species."""
     position: int
     human_residue: str = Field(description="Amino acid at this position in human protein")
-    mouse_residue: str = Field(description="Amino acid at this position in mouse ortholog")
-    is_conserved: bool = Field(description="Whether the residue is identical in human and mouse")
+    ortholog_residue: str = Field(description="Amino acid at this position in the ortholog (mouse/rat/cynomolgus)")
+    is_conserved: bool = Field(description="Whether the residue is identical in human and the ortholog")
     is_conservative_substitution: bool = Field(
         default=False,
         description="If not identical, whether the substitution preserves physicochemical properties (e.g. Leu→Ile, Asp→Glu)"
@@ -195,18 +195,29 @@ class ResidueConservation(BaseModel):
     )
 
 
-class ConservationResult(BaseModel):
-    """Human vs. mouse conservation analysis for binding site residues."""
-    human_uniprot: str
-    mouse_uniprot: str | None = Field(default=None)
-    residues_checked: int
-    residues_conserved: int
-    conservation_fraction: float = Field(description="Fraction of residues identical between human and mouse. >0.9 = excellent translatability, 0.7-0.9 = good, <0.7 = caution — mouse model may not recapitulate human binding.")
+class SpeciesConservation(BaseModel):
+    """Conservation result for a single preclinical species."""
+    species: str = Field(description="Common species name: 'mouse', 'rat', or 'cynomolgus'")
+    organism_id: int = Field(description="NCBI taxonomy ID for this organism")
+    ortholog_uniprot: str | None = Field(default=None, description="UniProt accession for the ortholog in this species")
+    residues_conserved: int = Field(default=0, description="Number of residue positions identical to human")
+    conservation_fraction: float = Field(default=0.0, description="Fraction of checked positions identical to human. >0.9 = excellent, 0.7-0.9 = good, <0.7 = caution.")
     non_conserved: list[ResidueConservation] = Field(
         default_factory=list,
-        description="Residues that differ between human and mouse — these are the positions where a mouse model might give misleading results"
+        description="Residues that differ from human at this species — positions where the model may give misleading results"
     )
-    interpretation: str = Field(description="Assessment of cross-species translatability and implications for preclinical models")
+    note: str = Field(default="", description="Informational note, e.g. if no ortholog was found or sequence retrieval failed")
+
+
+class ConservationResult(BaseModel):
+    """Multi-species conservation analysis for binding site residues (mouse, rat, cynomolgus)."""
+    human_uniprot: str
+    residues_checked: int
+    species_results: list[SpeciesConservation] = Field(
+        default_factory=list,
+        description="Per-species conservation summary. Ordered: mouse, rat, cynomolgus."
+    )
+    interpretation: str = Field(description="Aggregate assessment of cross-species translatability and recommended preclinical model")
 
 
 # ---------------------------------------------------------------------------

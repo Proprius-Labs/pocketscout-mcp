@@ -46,6 +46,7 @@ from .models import (
     RelatedStructuresResult,
     LigandHistory,
     ResidueConservation,
+    SpeciesConservation,
     ConservationResult,
     PaperResult,
     LiteratureResult,
@@ -568,6 +569,14 @@ async def get_ligand_history(
 # Tool 5: check_conservation
 # ---------------------------------------------------------------------------
 
+# NCBI taxonomy IDs for preclinical model organisms
+_ORGANISM_IDS: dict[str, int] = {
+    "mouse": 10090,      # Mus musculus
+    "rat": 10116,        # Rattus norvegicus
+    "cynomolgus": 9541,  # Macaca fascicularis — closest primate preclinical model
+}
+
+
 @mcp.tool(
     name="CheckConservation",
     title="Check Conservation",
@@ -577,25 +586,34 @@ async def get_ligand_history(
 async def check_conservation(
     uniprot_id: str,
     residue_positions: list[int],
+    species: list[str] | None = None,
 ) -> dict:
-    """Check human vs. mouse conservation at specific binding site residues.
+    """Check conservation at binding site residues across mouse, rat, and cynomolgus.
 
     Critical for preclinical translatability: if key binding site residues
-    differ between human and mouse, mouse efficacy models may not predict
-    human response. Non-conserved positions are specifically flagged.
+    differ between human and a preclinical model, that species' efficacy
+    data may not predict human response. Non-conserved positions are flagged
+    for each species individually.
 
-    Conservation > 90%: excellent — mouse model should recapitulate binding.
-    Conservation 70-90%: acceptable — verify non-conserved positions aren't
-    in the binding interface.
-    Conservation < 70%: caution — consider rat, cyno, or humanized models.
+    Conservation > 90%: excellent — species should recapitulate human binding.
+    Conservation 70-90%: acceptable — verify non-conserved positions are not
+    critical contact residues.
+    Conservation < 70%: caution for that species — consider a better-conserved
+    alternative. Cynomolgus (macaque) is the closest primate model and often
+    shows higher conservation than rodents when the target has primate-specific
+    sequence features.
 
-    Provide the human UniProt accession and a list of residue positions
-    (from GetBindingSites) to check.
+    Default species checked: mouse, rat, cynomolgus. Pass a custom `species`
+    list to restrict or reorder (supported values: 'mouse', 'rat', 'cynomolgus').
+
+    Provide the human UniProt accession and residue positions from GetBindingSites.
     """
     if not residue_positions:
         return {"error": "Provide a list of residue positions to check"}
 
-    # Get human sequence
+    requested_species = species if species is not None else ["mouse", "rat", "cynomolgus"]
+
+    # Fetch human sequence once
     try:
         human_seq = await uniprot.get_sequence(uniprot_id)
     except APIError as e:
@@ -604,97 +622,144 @@ async def check_conservation(
     if not human_seq:
         return {"error": f"No sequence found for {uniprot_id}"}
 
-    # Find mouse ortholog
-    mouse_id = await uniprot.get_mouse_ortholog(uniprot_id)
-    if not mouse_id:
-        return ConservationResult(
-            human_uniprot=uniprot_id,
-            mouse_uniprot=None,
-            residues_checked=len(residue_positions),
-            residues_conserved=0,
-            conservation_fraction=0.0,
-            non_conserved=[],
-            interpretation=f"No mouse ortholog found for {uniprot_id}. Cannot assess cross-species conservation. This may indicate the target is not conserved in rodents, or the ortholog has a different gene name.",
-        ).model_dump()
+    species_results: list[SpeciesConservation] = []
 
-    try:
-        mouse_seq = await uniprot.get_sequence(mouse_id)
-    except APIError:
-        return ConservationResult(
-            human_uniprot=uniprot_id,
-            mouse_uniprot=mouse_id,
-            residues_checked=len(residue_positions),
-            residues_conserved=0,
-            conservation_fraction=0.0,
-            non_conserved=[],
-            interpretation=f"Found mouse ortholog {mouse_id} but failed to retrieve sequence.",
-        ).model_dump()
-
-    # Compare residues using local context matching to handle insertions/deletions.
-    # For each human position, we extract a window of surrounding sequence and
-    # find where it occurs in the mouse sequence, then compare the central residue.
-    conserved_count = 0
-    non_conserved = []
-    uncertain_count = 0
-
-    for pos in residue_positions:
-        idx = pos - 1  # Convert to 0-based
-        human_res = human_seq[idx] if idx < len(human_seq) else "?"
-
-        # Find the corresponding mouse residue by context matching
-        mouse_res, map_score = _find_ortholog_residue(human_seq, mouse_seq, idx)
-        uncertain = map_score < 0.5
-        if uncertain:
-            uncertain_count += 1
-
-        is_same = human_res == mouse_res
-        is_conservative = _is_conservative_substitution(human_res, mouse_res)
-
-        if is_same:
-            conserved_count += 1
-        else:
-            non_conserved.append(ResidueConservation(
-                position=pos,
-                human_residue=human_res,
-                mouse_residue=mouse_res,
-                is_conserved=False,
-                is_conservative_substitution=is_conservative,
-                mapping_uncertain=uncertain,
+    for name in requested_species:
+        org_id = _ORGANISM_IDS.get(name)
+        if org_id is None:
+            # Unknown species name — skip silently (or note it)
+            species_results.append(SpeciesConservation(
+                species=name,
+                organism_id=0,
+                note=f"Unknown species '{name}'. Supported: mouse, rat, cynomolgus.",
             ))
+            continue
 
-    fraction = conserved_count / len(residue_positions) if residue_positions else 0.0
+        # Resolve ortholog accession
+        ortholog = await uniprot.get_ortholog(uniprot_id, org_id)
+        if not ortholog:
+            species_results.append(SpeciesConservation(
+                species=name,
+                organism_id=org_id,
+                ortholog_uniprot=None,
+                note=f"No ortholog found for {uniprot_id} in {name} (organism_id={org_id}).",
+            ))
+            continue
 
-    # Generate interpretation
-    if fraction > 0.9:
-        interp = f"Excellent conservation ({fraction:.0%}). Mouse models should faithfully recapitulate human target binding."
-    elif fraction > 0.7:
-        non_cons_positions = [str(r.position) for r in non_conserved]
-        interp = (
-            f"Good conservation ({fraction:.0%}). "
-            f"Non-conserved positions at: {', '.join(non_cons_positions)}. "
-            "Verify these positions are not critical contact residues in your binding site of interest."
-        )
-    else:
-        interp = (
-            f"Low conservation ({fraction:.0%}). "
-            "Significant differences between human and mouse at binding site residues. "
-            "Mouse efficacy models may not predict human response. Consider cynomolgus monkey, "
-            "humanized mouse models, or other species with better conservation."
-        )
+        # Fetch ortholog sequence
+        try:
+            ortholog_seq = await uniprot.get_sequence(ortholog)
+        except APIError as e:
+            species_results.append(SpeciesConservation(
+                species=name,
+                organism_id=org_id,
+                ortholog_uniprot=ortholog,
+                note=f"Found {name} ortholog {ortholog} but failed to retrieve sequence: {e}",
+            ))
+            continue
 
-    if uncertain_count > 0:
-        interp += f" {uncertain_count} position(s) had low-confidence ortholog mapping — treat those calls cautiously."
+        # Per-position comparison using local context matching to handle indels
+        conserved_count = 0
+        non_conserved: list[ResidueConservation] = []
+
+        for pos in residue_positions:
+            idx = pos - 1  # Convert to 0-based
+            human_res = human_seq[idx] if idx < len(human_seq) else "?"
+
+            ortholog_res, map_score = _find_ortholog_residue(human_seq, ortholog_seq, idx)
+            uncertain = map_score < 0.5
+
+            is_same = human_res == ortholog_res
+            is_conservative = _is_conservative_substitution(human_res, ortholog_res)
+
+            if is_same:
+                conserved_count += 1
+            else:
+                non_conserved.append(ResidueConservation(
+                    position=pos,
+                    human_residue=human_res,
+                    ortholog_residue=ortholog_res,
+                    is_conserved=False,
+                    is_conservative_substitution=is_conservative,
+                    mapping_uncertain=uncertain,
+                ))
+
+        fraction = conserved_count / len(residue_positions) if residue_positions else 0.0
+        species_results.append(SpeciesConservation(
+            species=name,
+            organism_id=org_id,
+            ortholog_uniprot=ortholog,
+            residues_conserved=conserved_count,
+            conservation_fraction=round(fraction, 3),
+            non_conserved=non_conserved,
+        ))
+
+    # Build aggregate interpretation
+    interp = _build_conservation_interpretation(uniprot_id, residue_positions, species_results)
 
     result = ConservationResult(
         human_uniprot=uniprot_id,
-        mouse_uniprot=mouse_id,
         residues_checked=len(residue_positions),
-        residues_conserved=conserved_count,
-        conservation_fraction=round(fraction, 3),
-        non_conserved=non_conserved,
+        species_results=species_results,
         interpretation=interp,
     )
     return result.model_dump()
+
+
+def _build_conservation_interpretation(
+    uniprot_id: str,
+    residue_positions: list[int],
+    species_results: list[SpeciesConservation],
+) -> str:
+    """Build a human-readable aggregate interpretation of multi-species conservation."""
+    parts: list[str] = []
+
+    # Per-species fractions summary
+    frac_summaries = []
+    for sr in species_results:
+        if sr.ortholog_uniprot:
+            pct = f"{sr.conservation_fraction:.0%}"
+            frac_summaries.append(f"{sr.species} {pct}")
+        else:
+            frac_summaries.append(f"{sr.species} (no ortholog)")
+    if frac_summaries:
+        parts.append("Conservation at checked residues: " + ", ".join(frac_summaries) + ".")
+
+    # Identify best model (highest fraction among species WITH an ortholog)
+    with_ortholog = [sr for sr in species_results if sr.ortholog_uniprot]
+    if with_ortholog:
+        best = max(with_ortholog, key=lambda sr: sr.conservation_fraction)
+        parts.append(
+            f"Recommended preclinical model: {best.species} "
+            f"({best.conservation_fraction:.0%} conservation, UniProt {best.ortholog_uniprot})."
+        )
+
+    # Flag any species below 0.7
+    low = [sr for sr in with_ortholog if sr.conservation_fraction < 0.7]
+    for sr in low:
+        non_pos = [str(r.position) for r in sr.non_conserved]
+        parts.append(
+            f"Caution: {sr.species} conservation is low ({sr.conservation_fraction:.0%}). "
+            f"Non-conserved positions: {', '.join(non_pos) if non_pos else 'none listed'}. "
+            f"{sr.species.capitalize()} models may not recapitulate human target binding at these residues."
+        )
+
+    # Flag species without orthologs
+    missing = [sr for sr in species_results if not sr.ortholog_uniprot]
+    for sr in missing:
+        parts.append(f"No ortholog found for {uniprot_id} in {sr.species} — conservation cannot be assessed.")
+
+    # Flag uncertain mappings across all species
+    total_uncertain = sum(
+        sum(1 for r in sr.non_conserved if r.mapping_uncertain)
+        for sr in with_ortholog
+    )
+    if total_uncertain > 0:
+        parts.append(
+            f"{total_uncertain} position(s) across species had low-confidence ortholog mapping — treat those calls cautiously."
+        )
+
+    return " ".join(parts) if parts else "No conservation data available."
 
 
 # ---------------------------------------------------------------------------
