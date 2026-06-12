@@ -70,6 +70,33 @@ class UniProtClient(BaseClient):
         return await self.get_ortholog(human_accession, 10090)
 
 
+def parse_known_variants(entry: dict, positions: set[int]) -> list[dict]:
+    """Return Natural-variant / Mutagenesis features overlapping the given positions."""
+    out: list[dict] = []
+    for feat in entry.get("features", []):
+        ftype = feat.get("type", "")
+        if ftype not in ("Natural variant", "Mutagenesis"):
+            continue
+        loc = feat.get("location", {})
+        start = loc.get("start", {}).get("value")
+        end = loc.get("end", {}).get("value", start)
+        if start is None:
+            continue
+        if not any(start <= p <= end for p in positions):
+            continue
+        alt = feat.get("alternativeSequence", {}) or {}
+        orig = alt.get("originalSequence", "")
+        alts = alt.get("alternativeSequences", []) or []
+        out.append({
+            "position": start,
+            "original_residue": orig,
+            "variant_residue": alts[0] if alts else "",
+            "feature_type": ftype,
+            "description": feat.get("description", ""),
+        })
+    return out
+
+
 def parse_target_profile(entry: dict) -> dict:
     """Extract a structured target profile from a UniProt JSON entry.
 

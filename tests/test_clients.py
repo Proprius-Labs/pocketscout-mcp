@@ -559,6 +559,22 @@ def test_parse_abstracts():
     assert out["123"].startswith("Hello world")
 
 
+def test_parse_known_variants():
+    from pocketscout_mcp.clients.uniprot import parse_known_variants
+    entry = {"features": [
+        {"type": "Natural variant", "location": {"start": {"value": 790}, "end": {"value": 790}},
+         "description": "in lung cancer; gefitinib resistance",
+         "alternativeSequence": {"originalSequence": "T", "alternativeSequences": ["M"]}},
+        {"type": "Natural variant", "location": {"start": {"value": 1}, "end": {"value": 1}},
+         "description": "irrelevant", "alternativeSequence": {"originalSequence": "M", "alternativeSequences": ["L"]}},
+    ]}
+    out = parse_known_variants(entry, {790})
+    assert len(out) == 1
+    assert out[0]["position"] == 790
+    assert out[0]["original_residue"] == "T" and out[0]["variant_residue"] == "M"
+    assert "resistance" in out[0]["description"]
+
+
 @respx.mock
 @pytest.mark.asyncio
 async def test_get_ortholog_by_organism():

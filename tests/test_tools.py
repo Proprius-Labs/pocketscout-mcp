@@ -54,6 +54,18 @@ async def test_check_conservation_multispecies(monkeypatch):
 
 @respx.mock
 @pytest.mark.asyncio
+async def test_check_known_variants_tool():
+    from pocketscout_mcp import server
+    respx.get("https://rest.uniprot.org/uniprotkb/P00533.json").mock(
+        return_value=httpx.Response(200, json=load("uniprot_P00533.json"))
+    )
+    result = await server.check_known_variants(uniprot_id="P00533", residue_positions=[790])
+    assert result["positions_checked"] == 1
+    assert isinstance(result["variants"], list)
+
+
+@respx.mock
+@pytest.mark.asyncio
 async def test_characterize_uses_per_residue_when_available(monkeypatch):
     from pocketscout_mcp import server
     respx.get("https://rest.uniprot.org/uniprotkb/P01116.json").mock(

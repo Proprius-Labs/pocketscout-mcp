@@ -224,6 +224,33 @@ class ConservationResult(BaseModel):
 # Tool 6: search_target_literature
 # ---------------------------------------------------------------------------
 
+class KnownVariant(BaseModel):
+    """A known sequence variant or mutagenesis record at a binding-site residue."""
+    position: int
+    original_residue: str = ""
+    variant_residue: str = ""
+    feature_type: str = Field(description="'Natural variant' or 'Mutagenesis'")
+    description: str = ""
+
+
+class VariantCheckResult(BaseModel):
+    """Result of checking known variants at queried binding-site residues."""
+    uniprot_id: str
+    positions_checked: int
+    variants: list[KnownVariant] = Field(
+        default_factory=list,
+        description="Known variants or mutagenesis records overlapping the queried residue positions"
+    )
+    interpretation: str = Field(
+        description="Summary of variant risk signal: which positions are documented resistance/disease sites "
+                    "and what that means for binder design durability"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Tool 6: search_target_literature
+# ---------------------------------------------------------------------------
+
 class PaperResult(BaseModel):
     """A PubMed paper relevant to the target."""
     pmid: str

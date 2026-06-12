@@ -28,7 +28,7 @@ from mcp.types import Icon
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .clients.uniprot import UniProtClient, parse_target_profile
+from .clients.uniprot import UniProtClient, parse_target_profile, parse_known_variants
 from .clients.pdb import PDBClient, parse_structure_metadata, ARTIFACT_LIGANDS
 from .clients.alphafold import AlphaFoldClient, analyze_confidence
 from .clients.chembl import ChEMBLClient, analyze_bioactivities
@@ -48,6 +48,8 @@ from .models import (
     ResidueConservation,
     SpeciesConservation,
     ConservationResult,
+    KnownVariant,
+    VariantCheckResult,
     PaperResult,
     LiteratureResult,
 )
@@ -763,7 +765,47 @@ def _build_conservation_interpretation(
 
 
 # ---------------------------------------------------------------------------
-# Tool 6: search_target_literature
+# Tool 6: check_known_variants
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="CheckKnownVariants",
+    title="Check Known Variants",
+    tags={"variants", "resistance"},
+    annotations=READ_ONLY_ANNOTATIONS,
+)
+async def check_known_variants(uniprot_id: str, residue_positions: list[int]) -> dict:
+    """Flag known sequence variants and mutagenesis hits at binding-site residues.
+
+    Binding-site residues that are documented disease/resistance variants (e.g.
+    EGFR T790M) mark pockets that mutate under drug pressure — a key risk signal
+    when choosing where to design. Source: UniProt Natural variant + Mutagenesis
+    features. Provide the human UniProt accession and positions from GetBindingSites.
+    """
+    if not residue_positions:
+        return {"error": "Provide a list of residue positions to check"}
+    try:
+        entry = await uniprot.get_entry(uniprot_id)
+    except APIError as e:
+        return {"error": f"Failed to fetch UniProt entry: {e}"}
+    found = parse_known_variants(entry, set(residue_positions))
+    variants = [KnownVariant(**v) for v in found]
+    if variants:
+        interp = (f"{len(variants)} known variant(s) at the queried binding-site residues: "
+                  + "; ".join(f"{v.original_residue}{v.position}{v.variant_residue} ({v.feature_type})" for v in variants)
+                  + ". Variants at contact residues can drive resistance or alter binding — design with this in mind.")
+    else:
+        interp = "No known sequence variants or mutagenesis records at the queried residues — the pocket appears genetically stable in UniProt."
+    return VariantCheckResult(
+        uniprot_id=uniprot_id,
+        positions_checked=len(residue_positions),
+        variants=variants,
+        interpretation=interp,
+    ).model_dump()
+
+
+# ---------------------------------------------------------------------------
+# Tool 7: search_target_literature
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
