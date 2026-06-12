@@ -491,3 +491,30 @@ async def test_search_by_uniprot_server_error_raises_apierror():
     with pytest.raises(APIError):
         await client.search_by_uniprot("P00533")
     await client.close()
+
+
+# ---- AlphaFold per-residue pLDDT failure paths ----
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_per_residue_plddt_returns_empty_on_download_failure():
+    respx.get("https://alphafold.ebi.ac.uk/api/prediction/P00533").mock(
+        return_value=httpx.Response(200, json=[{"cifUrl": "https://example.org/af.cif"}])
+    )
+    respx.get("https://example.org/af.cif").mock(return_value=httpx.Response(500))
+    client = AlphaFoldClient()
+    assert await client.get_per_residue_plddt("P00533") == []
+    await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_per_residue_plddt_swallows_network_error():
+    respx.get("https://alphafold.ebi.ac.uk/api/prediction/P00533").mock(
+        return_value=httpx.Response(200, json=[{"cifUrl": "https://example.org/af.cif"}])
+    )
+    respx.get("https://example.org/af.cif").mock(side_effect=httpx.ConnectError("boom"))
+    client = AlphaFoldClient()
+    assert await client.get_per_residue_plddt("P00533") == []
+    await client.close()

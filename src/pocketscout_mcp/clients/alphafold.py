@@ -53,20 +53,24 @@ class AlphaFoldClient(BaseClient):
         return data
 
     async def get_per_residue_plddt(self, uniprot_id: str) -> list[float]:
-        """Download the AlphaFold CIF and read per-residue pLDDT (B-factor column)."""
-        prediction = await self.get_prediction(uniprot_id)
-        cif_url = prediction.get("cifUrl")
-        if not cif_url:
-            return []
+        """Download the AlphaFold CIF and read per-residue pLDDT (B-factor column).
+
+        Best-effort: returns [] on any failure (no prediction, no cifUrl,
+        download error, or parse error) so callers can fall back to the
+        global confidence path.
+        """
         import httpx as _httpx
-        async with _httpx.AsyncClient(timeout=30.0, follow_redirects=True) as dl:
-            resp = await dl.get(cif_url)
+        try:
+            prediction = await self.get_prediction(uniprot_id)
+            cif_url = prediction.get("cifUrl")
+            if not cif_url:
+                return []
+            async with _httpx.AsyncClient(timeout=30.0, follow_redirects=True) as dl:
+                resp = await dl.get(cif_url)
             if resp.status_code != 200:
                 return []
-            cif_text = resp.text
-        try:
             import gemmi
-            st = gemmi.make_structure_from_block(gemmi.cif.read_string(cif_text).sole_block())
+            st = gemmi.make_structure_from_block(gemmi.cif.read_string(resp.text).sole_block())
             model = st[0]
             values: list[float] = []
             for chain in model:
