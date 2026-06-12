@@ -267,3 +267,33 @@ class LiteratureResult(BaseModel):
     total_found: int
     papers: list[PaperResult]
     interpretation: str = Field(description="Brief summary of what the literature reveals about this target's binding landscape")
+
+
+# ---------------------------------------------------------------------------
+# Tool: consolidate_binding_sites
+# ---------------------------------------------------------------------------
+
+class ConsolidatedPocket(BaseModel):
+    """A binding pocket cluster aggregated across multiple structures."""
+    residue_union: list[int] = Field(description="Union of all residue positions seen in this pocket cluster across structures")
+    occurrences: list[tuple[str, str]] = Field(description="(pdb_id, ligand_id) pairs where this pocket appears")
+    structure_count: int = Field(description="Number of distinct structures in which this pocket was detected")
+    representative_site_type: str = Field(description="Most common site type for this cluster: 'orthosteric', 'allosteric', 'cofactor', etc.")
+
+
+class ConsolidationResult(BaseModel):
+    """Cross-structure binding pocket map for a target."""
+    uniprot_id: str
+    structures_analyzed: int = Field(description="Number of PDB structures searched for pockets")
+    pockets: list[ConsolidatedPocket] = Field(
+        default_factory=list,
+        description="Clustered pockets sorted by structure_count descending. The top pocket is the most recurrent and best-validated site."
+    )
+    numbering_caveat: str = Field(
+        default=(
+            "Clustering assumes consistent author residue numbering across structures; "
+            "holds for most human-protein PDB entries but not universally."
+        ),
+        description="Caveat on residue numbering consistency across structures"
+    )
+    interpretation: str = Field(description="Summary of the cross-structure pocket landscape")

@@ -588,3 +588,21 @@ async def test_get_ortholog_by_organism():
     acc = await client.get_ortholog("P00533", 10090)
     assert acc == "Q01279"
     await client.close()
+
+
+# ---- cluster_pockets ----
+
+
+def test_cluster_pockets():
+    from pocketscout_mcp.server import cluster_pockets
+    sites = [
+        {"pdb_id": "1AAA", "ligand_id": "STI", "site_type": "orthosteric", "residue_positions": [10, 11, 12, 13]},
+        {"pdb_id": "1BBB", "ligand_id": "AQ4", "site_type": "orthosteric", "residue_positions": [11, 12, 13, 14]},
+        {"pdb_id": "1CCC", "ligand_id": "GOL", "site_type": "allosteric", "residue_positions": [80, 81, 82]},
+    ]
+    clusters = cluster_pockets(sites, jaccard_threshold=0.3)
+    assert len(clusters) == 2
+    big = max(clusters, key=lambda c: c["structure_count"])
+    assert big["structure_count"] == 2
+    assert set(big["residue_union"]) == {10, 11, 12, 13, 14}
+    assert ("1AAA", "STI") in big["occurrences"]

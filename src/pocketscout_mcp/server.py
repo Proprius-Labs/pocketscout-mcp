@@ -52,6 +52,8 @@ from .models import (
     VariantCheckResult,
     PaperResult,
     LiteratureResult,
+    ConsolidatedPocket,
+    ConsolidationResult,
 )
 
 # ---------------------------------------------------------------------------
@@ -864,6 +866,132 @@ async def search_target_literature(
         interpretation=interp,
     )
     return lit_result.model_dump()
+
+
+# ---------------------------------------------------------------------------
+# Clustering helper (pure function — unit-tested independently)
+# ---------------------------------------------------------------------------
+
+def cluster_pockets(sites: list[dict], jaccard_threshold: float = 0.3) -> list[dict]:
+    """Greedy single-link clustering of pockets across structures by residue overlap.
+
+    Each site dict must have: pdb_id, ligand_id, site_type, residue_positions.
+    Sites with no residue_positions are skipped.
+    Returns clusters sorted by structure_count descending.
+    """
+    clusters: list[dict] = []
+    for site in sites:
+        rset = set(site["residue_positions"])
+        if not rset:
+            continue
+        placed = False
+        for cl in clusters:
+            inter = len(cl["_residues"] & rset)
+            union = len(cl["_residues"] | rset)
+            if union and inter / union >= jaccard_threshold:
+                cl["_residues"] |= rset
+                cl["occurrences"].append((site["pdb_id"], site["ligand_id"]))
+                cl["_types"].append(site["site_type"])
+                placed = True
+                break
+        if not placed:
+            clusters.append({
+                "_residues": set(rset),
+                "occurrences": [(site["pdb_id"], site["ligand_id"])],
+                "_types": [site["site_type"]],
+            })
+    out = []
+    for cl in clusters:
+        types = cl["_types"]
+        out.append({
+            "residue_union": sorted(cl["_residues"]),
+            "occurrences": cl["occurrences"],
+            "structure_count": len({pid for pid, _ in cl["occurrences"]}),
+            "representative_site_type": max(set(types), key=types.count),
+        })
+    out.sort(key=lambda c: c["structure_count"], reverse=True)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Tool 8: consolidate_binding_sites
+# ---------------------------------------------------------------------------
+
+@mcp.tool(name="ConsolidateBindingSites", title="Consolidate Binding Sites",
+          tags={"structure", "binding-site"}, annotations=READ_ONLY_ANNOTATIONS)
+async def consolidate_binding_sites(
+    uniprot_id: str | None = None,
+    pdb_id: str | None = None,
+    limit: int = 10,
+) -> dict:
+    """Map the union of binding pockets across all structures of a target.
+
+    Fans out GetBindingSites over the top structures and clusters pockets by
+    residue overlap, so recurrent pockets (e.g. the ATP site appearing in most
+    structures) stand out from one-off or artifact sites. The heaviest tool —
+    downloads several coordinate files. Provide uniprot_id (preferred) or pdb_id.
+    """
+    if not uniprot_id and not pdb_id:
+        return {"error": "Provide either uniprot_id or pdb_id"}
+
+    _, uniprot_id = await _resolve_identifiers(pdb_id, uniprot_id)
+
+    if not uniprot_id:
+        return {"error": "Could not resolve UniProt ID"}
+
+    try:
+        pdb_ids = await pdb.search_by_uniprot(uniprot_id, limit=limit)
+    except APIError as e:
+        return {"error": f"PDB search failed: {e}"}
+
+    import asyncio
+    sem = asyncio.Semaphore(6)
+
+    async def _sites(pid: str) -> list[dict]:
+        async with sem:
+            try:
+                data = await pdb.get_binding_sites(pid)
+            except APIError:
+                return []
+        out = []
+        for lig in data.get("ligands", []):
+            positions = sorted({
+                c["residue_number"]
+                for c in lig.get("contacts", [])
+                if c["residue_number"] > 0
+            })
+            if positions:
+                out.append({
+                    "pdb_id": pid.upper(),
+                    "ligand_id": lig.get("comp_id", ""),
+                    "site_type": _classify_site_type(
+                        lig.get("comp_id", ""), lig.get("name", "")
+                    ),
+                    "residue_positions": positions,
+                })
+        return out
+
+    per_structure = await asyncio.gather(*[_sites(p) for p in pdb_ids])
+    all_sites = [s for group in per_structure for s in group]
+    clusters = cluster_pockets(all_sites)
+    pockets = [ConsolidatedPocket(**c) for c in clusters]
+
+    if pockets:
+        top = pockets[0]
+        interp = (
+            f"{len(pockets)} distinct pocket(s) across {len(pdb_ids)} structures. "
+            f"Most recurrent: a {top.representative_site_type} pocket in {top.structure_count} structure(s) "
+            f"(residues {top.residue_union[0]}–{top.residue_union[-1]}) — the dominant, best-validated site."
+        )
+    else:
+        interp = f"No non-artifact pockets found across {len(pdb_ids)} structures."
+
+    return ConsolidationResult(
+        uniprot_id=uniprot_id,
+        structures_analyzed=len(pdb_ids),
+        pockets=pockets,
+        interpretation=interp,
+    ).model_dump()
 
 
 # ---------------------------------------------------------------------------
