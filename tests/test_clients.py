@@ -389,3 +389,36 @@ class TestConservativeSubstitution:
         from pocketscout_mcp.server import _is_conservative_substitution
         assert _is_conservative_substitution("D", "K") is False  # neg vs pos
         assert _is_conservative_substitution("G", "W") is False  # small vs aromatic
+
+
+# ---- BaseClient TTL cache ----
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_json_caches_within_ttl():
+    route = respx.get("https://rest.uniprot.org/uniprotkb/P00533.json").mock(
+        return_value=httpx.Response(200, json={"primaryAccession": "P00533"})
+    )
+    client = UniProtClient()
+    a = await client.get_json("/uniprotkb/P00533.json")
+    b = await client.get_json("/uniprotkb/P00533.json")
+    assert a == b == {"primaryAccession": "P00533"}
+    assert route.call_count == 1  # second call served from cache
+    await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_json_distinct_params_not_shared():
+    r1 = respx.get("https://rest.uniprot.org/uniprotkb/search", params={"query": "a"}).mock(
+        return_value=httpx.Response(200, json={"q": "a"})
+    )
+    r2 = respx.get("https://rest.uniprot.org/uniprotkb/search", params={"query": "b"}).mock(
+        return_value=httpx.Response(200, json={"q": "b"})
+    )
+    client = UniProtClient()
+    assert await client.get_json("/uniprotkb/search", params={"query": "a"}) == {"q": "a"}
+    assert await client.get_json("/uniprotkb/search", params={"query": "b"}) == {"q": "b"}
+    assert r1.call_count == 1 and r2.call_count == 1
+    await client.close()

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 import httpx
 
 
@@ -30,6 +32,8 @@ class BaseClient:
         self.timeout = timeout
         self.max_retries = max_retries
         self._client: httpx.AsyncClient | None = None
+        self._cache: dict[tuple, tuple[float, object]] = {}
+        self._cache_maxsize = 512
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -87,6 +91,26 @@ class BaseClient:
 
     async def post(self, path: str, **kwargs) -> httpx.Response:
         return await self._request("POST", path, **kwargs)
+
+    @staticmethod
+    def _cache_key(path: str, params: dict | None) -> tuple:
+        return (path, tuple(sorted((params or {}).items())))
+
+    async def get_json(self, path: str, params: dict | None = None, ttl: float = 3600.0):
+        """GET a path and return parsed JSON, cached in-process for `ttl` seconds."""
+        key = self._cache_key(path, params)
+        hit = self._cache.get(key)
+        if hit is not None:
+            ts, value = hit
+            if time.monotonic() - ts < ttl:
+                return value
+            del self._cache[key]
+        resp = await self.get(path, params=params) if params is not None else await self.get(path)
+        value = resp.json()
+        if len(self._cache) >= self._cache_maxsize:
+            self._cache.pop(next(iter(self._cache)))  # drop oldest inserted
+        self._cache[key] = (time.monotonic(), value)
+        return value
 
     async def close(self):
         if self._client and not self._client.is_closed:
