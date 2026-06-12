@@ -21,6 +21,8 @@ ranked recommendation.
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastmcp import FastMCP
 from mcp.types import Icon
 from starlette.requests import Request
@@ -79,6 +81,22 @@ ICON_SVG = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill=
   <circle cx="12" cy="12" r="0.95" fill="#D97706" stroke="none"/>
 </svg>"""
 
+uniprot = UniProtClient()
+pdb = PDBClient()
+alphafold = AlphaFoldClient()
+chembl = ChEMBLClient()
+pubmed = PubMedClient()
+
+
+@asynccontextmanager
+async def _lifespan(app):
+    try:
+        yield
+    finally:
+        for c in (uniprot, pdb, alphafold, chembl, pubmed):
+            await c.close()
+
+
 mcp = FastMCP(
     "PocketScout",
     instructions=(
@@ -88,6 +106,7 @@ mcp = FastMCP(
         "Use the binding_site_assessment prompt for a complete workflow."
     ),
     icons=ICONS,
+    lifespan=_lifespan,
 )
 
 
@@ -99,12 +118,6 @@ async def favicon(request: Request) -> Response:
         media_type="image/svg+xml",
         headers={"Cache-Control": "public, max-age=86400"},
     )
-
-uniprot = UniProtClient()
-pdb = PDBClient()
-alphafold = AlphaFoldClient()
-chembl = ChEMBLClient()
-pubmed = PubMedClient()
 
 
 # ---------------------------------------------------------------------------
