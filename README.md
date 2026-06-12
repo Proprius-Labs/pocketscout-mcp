@@ -62,10 +62,14 @@ PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tool
 | `get_ligand_history` | Competitive landscape from bioactivity data | ChEMBL |
 | `check_conservation` | Human vs. mouse at binding residues | UniProt Orthologs |
 | `search_target_literature` | Structural/design-focused papers | PubMed E-utilities |
+| `check_known_variants` | Flag known disease/resistance variants at binding-site residues | UniProt |
+| `consolidate_binding_sites` | Union of pockets across all structures of a target, ranked by recurrence | RCSB PDB + gemmi |
 
-### Orchestration Prompt
+### Orchestration Prompts
 
-`binding_site_assessment` — Guides the AI through all six tools in scientific workflow order, producing a ranked recommendation of binding regions with evidence, trade-offs, and design parameters.
+`target_briefing` — Quick triage briefing for a drug target: what the protein is, its main pockets, the competitive landscape, and the one or two things worth knowing before going deeper. Use this for fast first-pass assessment.
+
+`binding_site_assessment` — In-depth, design-focused workup. Guides the AI through all tools in scientific workflow order, producing a ranked recommendation of binding regions with evidence, trade-offs, and design parameters.
 
 ### Install locally (optional)
 
@@ -189,8 +193,8 @@ export NCBI_API_KEY=your_key_here
 ## Roadmap
 
 - [x] Coordinate-level binding site analysis with gemmi
-- [ ] Per-residue AlphaFold pLDDT from CIF files
-- [ ] Multi-species conservation via proper MSA
+- [x] Per-residue AlphaFold pLDDT from CIF files
+- [x] Multi-species conservation (mouse/rat/cynomolgus via local-context matching)
 - [ ] Integration with computational pocket prediction (fpocket MCP)
 - [ ] Allosteric site detection from ensemble structures
 - [ ] Patent landscape integration (SureChEMBL)

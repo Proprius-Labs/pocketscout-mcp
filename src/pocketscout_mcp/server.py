@@ -1069,6 +1069,26 @@ literature where relevant. Flag uncertainties clearly."""
 
 
 # ---------------------------------------------------------------------------
+# Quick triage prompt
+# ---------------------------------------------------------------------------
+
+@mcp.prompt()
+def target_briefing(target: str) -> str:
+    """Quick triage briefing for a drug target — what it is and where its pockets are."""
+    return f"""Give me a fast binding-site briefing on {target} using PocketScout.
+
+1. CharacterizeTarget — what is this protein (family, location, structure confidence)?
+2. GetRelatedStructures — how well-characterized is it structurally?
+3. GetBindingSites on the best structure — what pockets exist and how druggable are they?
+4. GetLigandHistory — is the chemical space crowded or open?
+5. SearchTargetLiterature — any notable allosteric/cryptic sites or resistance themes?
+
+Summarize in a short briefing: what the target is, the main pocket(s), the
+competitive landscape, and the one or two things worth knowing before going
+deeper. Keep it concise — this is triage, not a full design workup."""
+
+
+# ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
 
