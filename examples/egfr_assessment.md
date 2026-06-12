@@ -102,7 +102,7 @@ This walkthrough shows a complete PocketScout workflow for EGFR (Epidermal Growt
     {
       "site_id": "site_1_AQ4",
       "ligand_id": "AQ4",
-      "ligand_name": "4-[(3-chloro-4-fluorophenyl)amino]-7-methoxyquinazolin-6-yl acetate (erlotinib analogue)",
+      "ligand_name": "erlotinib (4-anilinoquinazoline EGFR inhibitor; PDB ligand AQ4)",
       "site_type": "orthosteric",
       "num_residues": 18,
       "residue_positions": [718, 719, 721, 726, 745, 762, 790, 791, 792, 793, 795, 796, 854, 855, 856, 891, 917, 919],
@@ -244,7 +244,7 @@ This walkthrough shows a complete PocketScout workflow for EGFR (Epidermal Growt
 }
 ```
 
-**Key takeaways:** 847 papers covering structural and design topics. Critical literature themes for a new program: (1) allosteric C-helix pocket for mutant-selective inhibitors — may be exploitable for de novo protein binder design of the kinase regulatory interface; (2) C797S resistance (osimertinib) is the current clinical problem — neither covalent inhibitors nor most non-covalents address it, creating a design opportunity; (3) extracellular domain structures with nanobodies and antibodies reveal accessible epitopes, particularly in domain III, for protein binder design campaigns.
+**Key takeaways:** 847 papers covering structural and design topics. Critical literature themes for a new program: (1) allosteric C-helix pocket for mutant-selective inhibitors — may be exploitable for de novo protein binder design of the kinase regulatory interface (note: the C-helix/regulatory interface is intracellular — relevant for small molecules or intracellular modalities, NOT for cell-surface protein binders); (2) C797S resistance (osimertinib) is the current clinical problem — neither covalent inhibitors nor most non-covalents address it, creating a design opportunity; (3) extracellular domain structures with nanobodies and antibodies reveal accessible epitopes, particularly in domain III, for protein binder design campaigns.
 
 ---
 
@@ -261,7 +261,7 @@ The orthosteric ATP pocket remains accessible for two specific unmet needs: (a) 
 PDB 1M17 is NOT appropriate — it covers only the intracellular kinase domain (residues 696–1022, 27% of full protein). Intracellular targets are inaccessible to de novo protein binders delivered extracellularly.
 
 Pivot to the EXTRACELLULAR domain instead:
-- Domain II/III interface — cetuximab epitope; structures available (e.g., 1YY9, 3NJP). Cetuximab blocks domain III; alternative epitopes in domain II or the domain I/II interface are less exploited and accessible.
+- Domain III — cetuximab epitope (extracellular; structures 1YY9, 3NJP). A separate domain I/II epitope is targeted by other antibodies (e.g. necitumumab). Alternative epitopes in domain II or the domain I/II interface are less exploited and accessible.
 - The extracellular domain in the ligand-bound active conformation (tethered arm released) exposes epitopes that might stabilize or destabilize receptor dimerization — a mechanism distinct from existing antibodies.
 - Literature (2023, Nat Struct Mol Biol) describes nanobody-accessible epitopes in domain III; these are starting points for de novo binder campaigns.
 - Conservation note: the extracellular domain has ~60% human/mouse identity due to insertion/deletion regions; check conservation for any designed binder epitope separately before committing to mouse efficacy models.
