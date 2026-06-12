@@ -189,6 +189,18 @@ class TestAlphaFoldParsing:
         assert result["overall_confidence"] > 90  # KRAS: high confidence
 
 
+def test_segment_plddt_bands():
+    from pocketscout_mcp.clients.alphafold import _segment_plddt
+    # 3 high, 2 low, 3 moderate
+    arr = [95, 92, 91, 40, 50, 75, 80, 72]
+    regions = _segment_plddt(arr)
+    assert [r["assessment"] for r in regions] == ["high", "low", "moderate"]
+    assert regions[0]["start"] == 1 and regions[0]["end"] == 3
+    assert regions[1]["start"] == 4 and regions[1]["end"] == 5
+    assert regions[2]["start"] == 6 and regions[2]["end"] == 8
+    assert abs(regions[0]["mean_plddt"] - 92.67) < 0.1
+
+
 # ---- ChEMBL ----
 
 
