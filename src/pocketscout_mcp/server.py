@@ -2,21 +2,24 @@
 
 Scout the binding landscape before you design the binder.
 
-An MCP server that aggregates structural, chemical, and literature data
-to evaluate druggable pockets on protein targets before computational
-design. Designed to fill the gap between "I have a target" and
-"I'm running RFdiffusion."
+A FastMCP server for drug-target binding-site triage: it aggregates
+structural, chemical, conservation, and literature data into a briefing
+on a protein's druggable pockets. Especially useful as the reconnaissance
+step before computational binder design — the gap between "I have a target"
+and "I'm running RFdiffusion."
 
 Tools are ordered to reflect the natural scientific workflow:
-1. CharacterizeTarget — biological context + AlphaFold confidence
+1. CharacterizeTarget — biological context + AlphaFold confidence (per-residue pLDDT)
 2. GetRelatedStructures — structural coverage for the target
-3. GetBindingSites — map known pockets from co-crystals
+3. GetBindingSites — map known pockets from co-crystals (with contact types)
 4. GetLigandHistory — competitive landscape from ChEMBL
-5. CheckConservation — human vs. mouse translatability
+5. CheckConservation — human vs. mouse/rat/cynomolgus translatability
 6. SearchTargetLiterature — recent structural/design insights
+7. CheckKnownVariants — disease/resistance variants at binding residues
+8. ConsolidateBindingSites — union of pockets across all structures
 
-The binding_site_assessment prompt orchestrates all tools into a
-ranked recommendation.
+Two prompts orchestrate the tools: target_briefing (quick triage) and
+binding_site_assessment (in-depth ranked recommendation).
 """
 
 from __future__ import annotations

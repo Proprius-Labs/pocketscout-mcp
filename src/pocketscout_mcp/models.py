@@ -92,7 +92,7 @@ class BindingSiteResidue(BaseModel):
     chain: str
     residue_name: str = Field(description="Three-letter amino acid code, e.g. 'ALA', 'GLU'")
     residue_number: int
-    contact_type: str = Field(default="unknown", description="Type of interaction: 'hydrogen_bond', 'hydrophobic', 'ionic', 'pi_stacking', or 'unknown'")
+    contact_type: str = Field(default="unknown", description="Type of interaction: 'hydrogen_bond', 'hydrophobic', 'ionic', or 'unknown'")
 
 
 class BindingSite(BaseModel):
