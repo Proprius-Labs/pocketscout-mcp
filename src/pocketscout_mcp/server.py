@@ -8,12 +8,12 @@ design. Designed to fill the gap between "I have a target" and
 "I'm running RFdiffusion."
 
 Tools are ordered to reflect the natural scientific workflow:
-1. characterize_target — biological context + AlphaFold confidence
-2. get_related_structures — structural coverage for the target
-3. get_binding_sites — map known pockets from co-crystals
-4. get_ligand_history — competitive landscape from ChEMBL
-5. check_conservation — human vs. mouse translatability
-6. search_target_literature — recent structural/design insights
+1. CharacterizeTarget — biological context + AlphaFold confidence
+2. GetRelatedStructures — structural coverage for the target
+3. GetBindingSites — map known pockets from co-crystals
+4. GetLigandHistory — competitive landscape from ChEMBL
+5. CheckConservation — human vs. mouse translatability
+6. SearchTargetLiterature — recent structural/design insights
 
 The binding_site_assessment prompt orchestrates all tools into a
 ranked recommendation.
@@ -245,7 +245,7 @@ async def get_related_structures(
     binding site landscape to analyze. A target with only 1-2 structures
     (or only apo/unliganded structures) has less structural evidence.
 
-    Call this AFTER characterize_target and BEFORE get_binding_sites to
+    Call this AFTER CharacterizeTarget and BEFORE GetBindingSites to
     identify which structures to analyze for pockets.
     """
     if not pdb_id and not uniprot_id:
@@ -378,7 +378,7 @@ async def get_binding_sites(pdb_id: str) -> dict:
     - Large flat interfaces (> 30 residues) favor biologics or de novo protein binders
     - Allosteric sites may offer selectivity advantages over orthosteric sites
 
-    Call this on specific PDB IDs identified by get_related_structures.
+    Call this on specific PDB IDs identified by GetRelatedStructures.
     For comprehensive analysis, call on multiple structures with different
     co-crystallized ligands to build a complete pocket map.
     """
@@ -396,7 +396,7 @@ async def get_binding_sites(pdb_id: str) -> dict:
             num_sites=0,
             sites=[],
             artifact_ligands_filtered=artifacts,
-            interpretation=f"No non-artifact ligands found in {pdb_id}. This is an apo structure or contains only crystallization artifacts ({', '.join(artifacts) if artifacts else 'none detected'}). Check other structures for this target via get_related_structures.",
+            interpretation=f"No non-artifact ligands found in {pdb_id}. This is an apo structure or contains only crystallization artifacts ({', '.join(artifacts) if artifacts else 'none detected'}). Check other structures for this target via GetRelatedStructures.",
         ).model_dump()
 
     # Build binding sites from ligand data
@@ -584,7 +584,7 @@ async def check_conservation(
     Conservation < 70%: caution — consider rat, cyno, or humanized models.
 
     Provide the human UniProt accession and a list of residue positions
-    (from get_binding_sites) to check.
+    (from GetBindingSites) to check.
     """
     if not residue_positions:
         return {"error": "Provide a list of residue positions to check"}
@@ -710,8 +710,9 @@ async def search_target_literature(
     - context='antibody' for biologic-focused papers
     - context='oncology' for disease-specific context
 
-    Call this LAST — after structural and chemical data — to see if the
-    literature reveals insights not captured in database records (e.g.,
+    Call this LAST — after CharacterizeTarget, GetRelatedStructures,
+    GetBindingSites, GetLigandHistory, and CheckConservation — to see if
+    the literature reveals insights not captured in database records (e.g.,
     cryptic sites found by MD simulation, unpublished allosteric mechanisms).
     """
     try:
@@ -773,33 +774,33 @@ def binding_site_assessment(
 Follow this systematic workflow using PocketScout tools:
 
 **Step 1 — Target Context**
-Call characterize_target with pdb_id="{pdb_id}".
+Call CharacterizeTarget with pdb_id="{pdb_id}".
 Establish: What is this protein? What family? Where is it located?
 Note any AlphaFold confidence warnings for later cross-referencing.
 
 **Step 2 — Structural Coverage**
-Call get_related_structures with pdb_id="{pdb_id}".
+Call GetRelatedStructures with pdb_id="{pdb_id}".
 Assess: How many structures exist? What ligands? What quality?
 Identify the best structures for binding site analysis.
 
 **Step 3 — Binding Site Map**
-Call get_binding_sites on the most informative structure(s).
+Call GetBindingSites on the most informative structure(s).
 For well-studied targets, analyze 2-3 structures with different ligands
 to capture multiple pocket conformations.
 Map: Known binding sites, classification, druggability.
 
 **Step 4 — Competitive Landscape**
-Call get_ligand_history using the UniProt ID from Step 1.
+Call GetLigandHistory using the UniProt ID from Step 1.
 Assess: Is this target crowded or greenfield?
 What modalities have been tried? Where is the opportunity?
 
 **Step 5 — Translatability**
-Call check_conservation with binding site residue positions from Step 3.
+Call CheckConservation with binding site residue positions from Step 3.
 Flag: Are key contact residues conserved in mouse?
 What are the implications for preclinical models?
 
 **Step 6 — Literature Context**
-Call search_target_literature with the gene name from Step 1.
+Call SearchTargetLiterature with the gene name from Step 1.
 Look for: Cryptic/allosteric sites, resistance mutations, recent
 structural insights not captured in database records.
 
