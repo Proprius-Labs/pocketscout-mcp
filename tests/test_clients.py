@@ -545,3 +545,15 @@ def test_classify_contact_type():
     assert classify_contact_type("LEU", [("C", "C", 4.0)]) == "hydrophobic"
     # nothing in range -> unknown
     assert classify_contact_type("LEU", [("C", "C", 6.0)]) == "unknown"
+
+
+def test_parse_abstracts():
+    from pocketscout_mcp.clients.pubmed import _parse_abstracts
+    xml = (
+        "<PubmedArticleSet><PubmedArticle><MedlineCitation>"
+        "<PMID>123</PMID><Article><Abstract>"
+        "<AbstractText>Hello world abstract.</AbstractText>"
+        "</Abstract></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"
+    )
+    out = _parse_abstracts(xml)
+    assert out["123"].startswith("Hello world")

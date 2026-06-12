@@ -3,8 +3,27 @@
 from __future__ import annotations
 
 import os
+import xml.etree.ElementTree as ET
 
 from .base import BaseClient, APIError
+
+
+def _parse_abstracts(xml_text: str) -> dict[str, str]:
+    """Parse PubMed efetch XML and return {pmid: full_abstract_text}."""
+    out: dict[str, str] = {}
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError:
+        return out
+    for art in root.findall(".//PubmedArticle"):
+        pmid_el = art.find(".//PMID")
+        if pmid_el is None or not pmid_el.text:
+            continue
+        chunks = [t.text or "" for t in art.findall(".//Abstract/AbstractText")]
+        text = " ".join(c.strip() for c in chunks if c).strip()
+        if text:
+            out[pmid_el.text] = text
+    return out
 
 
 class PubMedClient(BaseClient):
@@ -23,6 +42,27 @@ class PubMedClient(BaseClient):
         if self._api_key:
             params["api_key"] = self._api_key
         return params
+
+    async def fetch_abstracts(self, pmids: list[str]) -> dict[str, str]:
+        """Fetch full abstracts for a list of PMIDs via efetch (XML).
+
+        Returns a dict of {pmid: abstract_text}. Returns empty dict on failure
+        so callers degrade gracefully.
+        """
+        if not pmids:
+            return {}
+        params = self._common_params()
+        params.update({
+            "db": "pubmed",
+            "id": ",".join(pmids),
+            "rettype": "abstract",
+            "retmode": "xml",
+        })
+        try:
+            resp = await self.get("/efetch.fcgi", params=params)
+        except APIError:
+            return {}
+        return _parse_abstracts(resp.text)
 
     async def search_target_literature(
         self,
@@ -111,8 +151,12 @@ class PubMedClient(BaseClient):
                 "authors": author_str,
                 "year": year,
                 "journal": article.get("source", ""),
-                "abstract_snippet": "",  # esummary doesn't include abstracts
+                "abstract_snippet": "",
             })
+
+        abstracts = await self.fetch_abstracts(id_list)
+        for p in papers:
+            p["abstract_snippet"] = abstracts.get(p["pmid"], "")[:300]
 
         return {
             "query": query,
