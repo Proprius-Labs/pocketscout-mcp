@@ -456,3 +456,26 @@ async def test_clinical_candidates_does_not_pollute_cache():
     cached = client._cache[client._cache_key("/mechanism.json", {"target_chembl_id": "CHEMBL_TARGET_1", "limit": "100"})][1]
     assert "_resolved_name" not in cached["mechanisms"][0]
     await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_search_by_uniprot_204_returns_empty():
+    respx.post("https://search.rcsb.org/rcsbsearch/v2/query").mock(
+        return_value=httpx.Response(204)
+    )
+    client = PDBClient()
+    assert await client.search_by_uniprot("P99999") == []
+    await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_search_by_uniprot_server_error_raises_apierror():
+    respx.post("https://search.rcsb.org/rcsbsearch/v2/query").mock(
+        return_value=httpx.Response(500)
+    )
+    client = PDBClient()
+    with pytest.raises(APIError):
+        await client.search_by_uniprot("P00533")
+    await client.close()

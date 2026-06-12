@@ -148,8 +148,6 @@ class PDBClient(BaseClient):
 
         Uses the RCSB Search API v2.
         """
-        import httpx
-
         query = {
             "query": {
                 "type": "terminal",
@@ -173,16 +171,12 @@ class PDBClient(BaseClient):
             "return_type": "entry",
         }
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                "https://search.rcsb.org/rcsbsearch/v2/query",
-                json=query,
-            )
-            if resp.status_code == 204:
-                # No results
-                return []
-            resp.raise_for_status()
-            data = resp.json()
+        resp = await self.post(
+            "https://search.rcsb.org/rcsbsearch/v2/query", json=query
+        )
+        if resp.status_code == 204:
+            return []
+        data = resp.json()
 
         results = data.get("result_set", [])
         return [r.get("identifier", "") for r in results if r.get("identifier")]
