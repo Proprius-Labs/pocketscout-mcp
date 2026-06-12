@@ -100,10 +100,11 @@ async def _lifespan(app):
 mcp = FastMCP(
     "PocketScout",
     instructions=(
-        "Binding site intelligence for drug target assessment. "
-        "Aggregates structural, chemical, and literature data to evaluate "
-        "druggable pockets before computational design. "
-        "Use the binding_site_assessment prompt for a complete workflow."
+        "Fast binding-site intelligence for drug-target triage. Pulls together "
+        "structural, chemical, conservation, and literature data into a briefing "
+        "on a protein's druggable pockets. Use the target_briefing prompt for a "
+        "quick assessment, or binding_site_assessment for an in-depth, "
+        "design-focused workup."
     ),
     icons=ICONS,
     lifespan=_lifespan,

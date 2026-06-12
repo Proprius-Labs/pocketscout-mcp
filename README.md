@@ -2,7 +2,7 @@
 
 **Scout the binding landscape before you design the binder.**
 
-An MCP server that aggregates structural, chemical, and literature data to evaluate druggable pockets on protein targets — filling the gap between *"I have a target"* and *"I'm running RFdiffusion."*
+PocketScout is a fast triage tool for drug-target binding sites — it gives an AI assistant the tools to pull together everything known about a protein's pockets (structure, chemistry, conservation, literature) into a single briefing in minutes. It's especially handy as the reconnaissance step before computational binder design, filling the gap between *"I have a target"* and *"I'm running RFdiffusion."*
 
 ## Get Started
 
@@ -44,13 +44,13 @@ Restart Claude Desktop, then ask Claude to assess a target.
 
 ## The Problem
 
-Drug discovery scientists spend hours to days manually gathering information across 6-10 browser tabs before they can make an informed decision about where on a protein to design a binder. They check UniProt for function, browse PDB for structures, search ChEMBL for prior art, read papers for allosteric insights — and then synthesize it all in their heads.
+Drug discovery scientists spend hours to days manually gathering information across 6-10 browser tabs before they can make an informed decision about a target. Scientists evaluating an unfamiliar target, new team members trying to get up to speed, and scouting or BD roles screening many candidates face the same bottleneck: they check UniProt for function, browse PDB for structures, search ChEMBL for prior art, read papers for allosteric insights — and then synthesize it all in their heads.
 
-This manual reconnaissance step is where campaigns quietly go wrong. A scientist picks the obvious orthosteric site without checking that 200 compounds have already failed there. They miss an allosteric pocket described in a 2023 paper. They don't realize the binding site residues aren't conserved in mouse until their in vivo model fails.
+This manual triage step is where campaigns quietly go wrong. A scientist picks the obvious orthosteric site without checking that 200 compounds have already failed there. They miss an allosteric pocket described in a 2023 paper. They don't realize the binding site residues aren't conserved in mouse until their in vivo model fails. For binder-design campaigns specifically, it's the gap between "I have a target" and knowing which pocket to hand off to RFdiffusion.
 
 ## The Solution
 
-PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tools to perform systematic binding site intelligence in minutes instead of hours. Six tools compose into a scientific workflow that reflects how expert medicinal chemists actually evaluate targets.
+PocketScout gives an AI assistant (Claude, or any MCP-compatible model) the tools to perform systematic binding site triage in minutes instead of hours — whether you're screening a target for the first time, briefing a new team member, or preparing a computational design campaign. Six tools compose into a scientific workflow that reflects how expert medicinal chemists actually evaluate targets.
 
 ## Tools
 

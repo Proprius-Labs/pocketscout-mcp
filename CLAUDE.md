@@ -2,13 +2,13 @@
 
 ## What This Is
 
-PocketScout is an MCP server for drug target binding site intelligence. It fills the gap between "I have a target" and "I'm running RFdiffusion" — the reconnaissance step where a scientist gathers and synthesizes everything known about a protein's binding landscape before computational design.
+PocketScout is a fast triage tool for drug-target binding sites — it gives an AI assistant the tools to pull together everything known about a protein's pockets (structure, chemistry, conservation, literature) into a single briefing in minutes. The flagship use case is reconnaissance before computational binder design: filling the gap between "I have a target" and "I'm running RFdiffusion."
 
 Built with FastMCP 3.0, Python 3.11+, httpx, Pydantic v2.
 
 ## Who This Is For
 
-Drug discovery scientists (computational and bench) who need to systematically evaluate where on a protein to design a binder. Also serves as a demonstration of domain-informed MCP server design for Anthropic's life sciences ecosystem.
+Drug discovery scientists (computational and bench) who need a fast binding-site briefing — whether evaluating an unfamiliar target, onboarding a new team member, screening candidates in a scouting or BD role, or preparing a target for de novo binder design. Also serves as a demonstration of domain-informed MCP server design for Anthropic's life sciences ecosystem.
 
 ## Design Philosophy
 
