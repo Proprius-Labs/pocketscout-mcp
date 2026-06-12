@@ -557,3 +557,18 @@ def test_parse_abstracts():
     )
     out = _parse_abstracts(xml)
     assert out["123"].startswith("Hello world")
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_ortholog_by_organism():
+    respx.get("https://rest.uniprot.org/uniprotkb/P00533.json").mock(
+        return_value=httpx.Response(200, json=load_fixture("uniprot_P00533.json"))
+    )
+    respx.get(url__regex=r"https://rest.uniprot.org/uniprotkb/search.*").mock(
+        return_value=httpx.Response(200, json={"results": [{"primaryAccession": "Q01279"}]})
+    )
+    client = UniProtClient()
+    acc = await client.get_ortholog("P00533", 10090)
+    assert acc == "Q01279"
+    await client.close()
