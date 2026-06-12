@@ -436,3 +436,23 @@ async def test_pdb_get_entry_cached():
     await client.get_entry("1M17")
     assert route.call_count == 1
     await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_clinical_candidates_does_not_pollute_cache():
+    respx.get("https://www.ebi.ac.uk/chembl/api/data/mechanism.json").mock(
+        return_value=httpx.Response(200, json={"mechanisms": [
+            {"molecule_chembl_id": "CHEMBL1", "molecule_pref_name": None}
+        ]})
+    )
+    respx.get("https://www.ebi.ac.uk/chembl/api/data/molecule/CHEMBL1.json").mock(
+        return_value=httpx.Response(200, json={"pref_name": "DRUGX"})
+    )
+    client = ChEMBLClient()
+    first = await client.get_clinical_candidates("CHEMBL_TARGET_1")
+    assert first[0]["_resolved_name"] == "DRUGX"
+    # the cached raw response must NOT carry the injected private field
+    cached = client._cache[client._cache_key("/mechanism.json", {"target_chembl_id": "CHEMBL_TARGET_1", "limit": "100"})][1]
+    assert "_resolved_name" not in cached["mechanisms"][0]
+    await client.close()

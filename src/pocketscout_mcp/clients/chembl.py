@@ -79,7 +79,7 @@ class ChEMBLClient(BaseClient):
         except APIError:
             return []
 
-        mechanisms = data.get("mechanisms", [])
+        mechanisms = [dict(m) for m in data.get("mechanisms", [])]
 
         # Collect unique molecule IDs for name resolution
         unique_mol_ids = list({
