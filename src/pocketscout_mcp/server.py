@@ -249,10 +249,20 @@ async def get_related_structures(
     except APIError as e:
         return {"error": f"PDB search failed: {e}"}
 
+    # Fetch UniProt profile once — provides gene name and organism for all structures
+    organism = "unknown"
+    gene_name = ""
+    try:
+        profile = parse_target_profile(await uniprot.get_entry(uniprot_id))
+        gene_name = profile["gene_name"]
+        organism = profile["organism"]
+    except APIError:
+        pass
+
     if not pdb_ids:
         return {
             "uniprot_id": uniprot_id,
-            "gene_name": "",
+            "gene_name": gene_name,
             "total_structures": 0,
             "structures": [],
             "unique_ligands": [],
@@ -261,61 +271,52 @@ async def get_related_structures(
             "interpretation": "No experimental structures found in PDB. Consider using AlphaFold predicted structure, but note that predicted binding sites have lower reliability than those from experimental structures.",
         }
 
-    # Fetch metadata for each structure (limit to top entries to avoid slow response)
-    structures = []
+    # Fetch metadata for each structure in parallel with bounded concurrency
+    import asyncio
+    sem = asyncio.Semaphore(8)
+
+    async def _fetch(pid: str) -> RelatedStructure | None:
+        async with sem:
+            try:
+                entry = await pdb.get_entry(pid)
+                meta = parse_structure_metadata(entry)
+                np_entities = await pdb.get_nonpolymer_entities(pid)
+            except APIError:
+                return None
+        ligand_ids = []
+        for np in np_entities:
+            ids = np.get("rcsb_nonpolymer_entity_container_identifiers", {})
+            comp_id = ids.get("nonpolymer_comp_id", "") or ids.get("comp_id", "")
+            if not comp_id:
+                pdbx = np.get("pdbx_entity_nonpoly", {})
+                if isinstance(pdbx, list) and pdbx:
+                    comp_id = pdbx[0].get("comp_id", "")
+                elif isinstance(pdbx, dict):
+                    comp_id = pdbx.get("comp_id", "")
+            if comp_id and comp_id not in ARTIFACT_LIGANDS:
+                ligand_ids.append(comp_id)
+        return RelatedStructure(
+            pdb_id=pid,
+            title=meta["title"],
+            resolution=meta["resolution"],
+            method=meta["method"],
+            organism=organism,
+            ligand_ids=ligand_ids,
+            release_date=meta["release_date"],
+        )
+
+    fetched = await asyncio.gather(*[_fetch(pid) for pid in pdb_ids[:limit]])
+    structures = [s for s in fetched if s is not None]
     all_ligands = set()
     has_apo = False
-
-    for pid in pdb_ids[:limit]:
-        try:
-            entry = await pdb.get_entry(pid)
-            meta = parse_structure_metadata(entry)
-
-            # Get ligands
-            np_entities = await pdb.get_nonpolymer_entities(pid)
-            ligand_ids = []
-            for np in np_entities:
-                ids = np.get("rcsb_nonpolymer_entity_container_identifiers", {})
-                comp_id = ids.get("nonpolymer_comp_id", "") or ids.get("comp_id", "")
-                if not comp_id:
-                    pdbx = np.get("pdbx_entity_nonpoly", {})
-                    if isinstance(pdbx, list) and pdbx:
-                        comp_id = pdbx[0].get("comp_id", "")
-                    elif isinstance(pdbx, dict):
-                        comp_id = pdbx.get("comp_id", "")
-                if comp_id and comp_id not in ARTIFACT_LIGANDS:
-                    ligand_ids.append(comp_id)
-                    all_ligands.add(comp_id)
-
-            if not ligand_ids:
-                has_apo = True
-
-            organism = "unknown"
-            entities = entry.get("rcsb_entry_container_identifiers", {}).get("polymer_entity_ids", [])
-
-            structures.append(RelatedStructure(
-                pdb_id=pid,
-                title=meta["title"],
-                resolution=meta["resolution"],
-                method=meta["method"],
-                organism=organism,
-                ligand_ids=ligand_ids,
-                release_date=meta["release_date"],
-            ))
-        except APIError:
-            continue
+    for s in structures:
+        all_ligands.update(s.ligand_ids)
+        if not s.ligand_ids:
+            has_apo = True
 
     # Sort by resolution
     structures.sort(key=lambda s: s.resolution if s.resolution else 99.0)
     best_res = structures[0].resolution if structures else None
-
-    # Get gene name from UniProt (quick)
-    gene_name = ""
-    try:
-        entry = await uniprot.get_entry(uniprot_id)
-        gene_name = parse_target_profile(entry)["gene_name"]
-    except APIError:
-        pass
 
     # Interpretation
     interp_parts = [f"{len(structures)} experimental structures found for {gene_name or uniprot_id}."]
