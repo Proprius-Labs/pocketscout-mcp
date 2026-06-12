@@ -533,3 +533,15 @@ def test_find_ortholog_residue_low_score_on_mismatch():
     from pocketscout_mcp.server import _find_ortholog_residue
     res, score = _find_ortholog_residue("MADEKVLRST", "WWWWWWWWWW", 3)
     assert score < 0.5
+
+
+def test_classify_contact_type():
+    from pocketscout_mcp.clients.pdb import classify_contact_type
+    # residue N/O to ligand N/O within 3.5 -> hydrogen_bond
+    assert classify_contact_type("SER", [("O", "N", 3.0)]) == "hydrogen_bond"
+    # charged residue, polar pair within 4.0 (not 3.5) -> ionic
+    assert classify_contact_type("ASP", [("O", "N", 3.8)]) == "ionic"
+    # carbon-carbon within 4.5 -> hydrophobic
+    assert classify_contact_type("LEU", [("C", "C", 4.0)]) == "hydrophobic"
+    # nothing in range -> unknown
+    assert classify_contact_type("LEU", [("C", "C", 6.0)]) == "unknown"

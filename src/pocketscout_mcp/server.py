@@ -420,6 +420,7 @@ async def get_binding_sites(pdb_id: str) -> dict:
                 chain=c["chain"],
                 residue_name=c["residue_name"],
                 residue_number=c["residue_number"],
+                contact_type=c.get("contact_type", "unknown"),
             )
             for c in contacts
         ]

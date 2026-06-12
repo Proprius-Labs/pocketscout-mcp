@@ -18,6 +18,28 @@ ARTIFACT_LIGANDS = {
 }
 
 
+_CHARGED_RESIDUES = {"ASP", "GLU", "LYS", "ARG", "HIS"}
+
+
+def classify_contact_type(residue_name: str, pairs: list[tuple[str, str, float]]) -> str:
+    """Classify a residue-ligand contact from (res_element, lig_element, distance) pairs.
+
+    Priority order: hydrogen_bond > ionic > hydrophobic > unknown.
+    - hydrogen_bond: both atoms are N or O and distance < 3.5 Å
+    - ionic: charged residue with N–O pair within 4.0 Å (but no tighter H-bond)
+    - hydrophobic: C–C pair within 4.5 Å
+    - unknown: no qualifying pair found
+    """
+    polar = {"N", "O"}
+    if any(r in polar and l in polar and d < 3.5 for r, l, d in pairs):
+        return "hydrogen_bond"
+    if residue_name in _CHARGED_RESIDUES and any(r in polar and l in polar and d < 4.0 for r, l, d in pairs):
+        return "ionic"
+    if any(r == "C" and l == "C" and d < 4.5 for r, l, d in pairs):
+        return "hydrophobic"
+    return "unknown"
+
+
 def parse_structure_metadata(entry: dict) -> dict:
     """Extract key metadata from a PDB entry response.
 
@@ -316,26 +338,33 @@ class PDBClient(BaseClient):
                     if residue.name not in ligand_ids:
                         continue
                     comp_id = residue.name
-                    seen = set()
+                    # pairs_by_key: residue key -> list of (res_element, lig_element, distance)
+                    pairs_by_key: dict[tuple[str, str, str], list[tuple[str, str, float]]] = {}
                     for atom in residue:
+                        lig_element = atom.element.name
                         for mark in ns.find_atoms(atom.pos, "\0", radius=cutoff):
                             cra = mark.to_cra(model)
                             if cra.residue.name not in amino_acids:
                                 continue
                             key = (cra.chain.name, cra.residue.name, str(cra.residue.seqid))
-                            if key in seen:
-                                continue
-                            seen.add(key)
+                            res_element = cra.atom.element.name
+                            dist = atom.pos.dist(cra.atom.pos)
+                            if key not in pairs_by_key:
+                                pairs_by_key[key] = []
+                            pairs_by_key[key].append((res_element, lig_element, dist))
 
                     contact_list = []
-                    for ch, resname, seqid in sorted(
-                        seen, key=lambda x: (x[0], int(x[2]) if x[2].isdigit() else 0)
+                    for key in sorted(
+                        pairs_by_key, key=lambda x: (x[0], int(x[2]) if x[2].isdigit() else 0)
                     ):
+                        ch, resname, seqid = key
                         seq_num = int(seqid) if seqid.isdigit() else 0
+                        contact_type = classify_contact_type(resname, pairs_by_key[key])
                         contact_list.append({
                             "chain": ch,
                             "residue_name": resname,
                             "residue_number": seq_num,
+                            "contact_type": contact_type,
                         })
 
                     if comp_id not in contacts_by_ligand:
