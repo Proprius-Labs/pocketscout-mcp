@@ -13,8 +13,7 @@ class UniProtClient(BaseClient):
 
     async def get_entry(self, accession: str) -> dict:
         """Fetch a full UniProt entry as JSON."""
-        resp = await self.get(f"/uniprotkb/{accession}.json")
-        return resp.json()
+        return await self.get_json(f"/uniprotkb/{accession}.json")
 
     async def get_sequence(self, accession: str) -> str:
         """Fetch the amino acid sequence for a UniProt accession."""
@@ -24,11 +23,11 @@ class UniProtClient(BaseClient):
             return seq.get("value", "")
         return ""
 
-    async def get_mouse_ortholog(self, human_accession: str) -> str | None:
-        """Find the mouse ortholog for a human UniProt accession.
+    async def get_ortholog(self, human_accession: str, organism_id: int) -> str | None:
+        """Find the ortholog for a human UniProt accession in the given organism.
 
-        Uses UniProt's search to find the equivalent mouse protein.
-        Returns the mouse UniProt accession or None.
+        Uses UniProt's search to find the equivalent protein in the target organism.
+        Returns the UniProt accession or None.
         """
         # Get gene name from the human entry
         entry = await self.get_entry(human_accession)
@@ -46,11 +45,11 @@ class UniProtClient(BaseClient):
         if not gene_name:
             return None
 
-        # Search for mouse ortholog by gene name
+        # Search for ortholog by gene name and organism
         resp = await self.get(
             "/uniprotkb/search",
             params={
-                "query": f"gene_exact:{gene_name} AND organism_id:10090 AND reviewed:true",
+                "query": f"gene_exact:{gene_name} AND organism_id:{organism_id} AND reviewed:true",
                 "format": "json",
                 "size": "1",
                 "fields": "accession",
@@ -61,6 +60,41 @@ class UniProtClient(BaseClient):
         if results:
             return results[0].get("primaryAccession")
         return None
+
+    async def get_mouse_ortholog(self, human_accession: str) -> str | None:
+        """Find the mouse ortholog for a human UniProt accession.
+
+        Thin wrapper around get_ortholog with organism_id=10090 (Mus musculus).
+        Returns the mouse UniProt accession or None.
+        """
+        return await self.get_ortholog(human_accession, 10090)
+
+
+def parse_known_variants(entry: dict, positions: set[int]) -> list[dict]:
+    """Return Natural-variant / Mutagenesis features overlapping the given positions."""
+    out: list[dict] = []
+    for feat in entry.get("features", []):
+        ftype = feat.get("type", "")
+        if ftype not in ("Natural variant", "Mutagenesis"):
+            continue
+        loc = feat.get("location", {})
+        start = loc.get("start", {}).get("value")
+        end = loc.get("end", {}).get("value") or start
+        if start is None:
+            continue
+        if not any(start <= p <= end for p in positions):
+            continue
+        alt = feat.get("alternativeSequence", {}) or {}
+        orig = alt.get("originalSequence", "")
+        alts = alt.get("alternativeSequences", []) or []
+        out.append({
+            "position": start,
+            "original_residue": orig,
+            "variant_residue": alts[0] if alts else "",
+            "feature_type": ftype,
+            "description": feat.get("description", ""),
+        })
+    return out
 
 
 def parse_target_profile(entry: dict) -> dict:

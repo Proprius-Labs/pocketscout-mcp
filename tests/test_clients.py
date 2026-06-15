@@ -189,6 +189,18 @@ class TestAlphaFoldParsing:
         assert result["overall_confidence"] > 90  # KRAS: high confidence
 
 
+def test_segment_plddt_bands():
+    from pocketscout_mcp.clients.alphafold import _segment_plddt
+    # 3 high, 2 low, 3 moderate
+    arr = [95, 92, 91, 40, 50, 75, 80, 72]
+    regions = _segment_plddt(arr)
+    assert [r["assessment"] for r in regions] == ["high", "low", "moderate"]
+    assert regions[0]["start"] == 1 and regions[0]["end"] == 3
+    assert regions[1]["start"] == 4 and regions[1]["end"] == 5
+    assert regions[2]["start"] == 6 and regions[2]["end"] == 8
+    assert abs(regions[0]["mean_plddt"] - 92.67) < 0.1
+
+
 # ---- ChEMBL ----
 
 
@@ -340,16 +352,16 @@ class TestConservationHelper:
     def test_find_ortholog_residue_identical_sequences(self):
         from pocketscout_mcp.server import _find_ortholog_residue
         seq = "MADEKVLR"
-        result = _find_ortholog_residue(seq, seq, 3)
-        assert result == "E"
+        res, _ = _find_ortholog_residue(seq, seq, 3)
+        assert res == "E"
 
     def test_find_ortholog_residue_with_insertion(self):
         from pocketscout_mcp.server import _find_ortholog_residue
         human = "MADEKVLRST"
         mouse = "MADXXEKVLRST"  # 2-residue insertion
         # Position 3 in human (E) should map to position 5 in mouse (E)
-        result = _find_ortholog_residue(human, mouse, 3)
-        assert result == "E"
+        res, _ = _find_ortholog_residue(human, mouse, 3)
+        assert res == "E"
 
 
 # ---- Integration: Site classification ----
@@ -389,3 +401,208 @@ class TestConservativeSubstitution:
         from pocketscout_mcp.server import _is_conservative_substitution
         assert _is_conservative_substitution("D", "K") is False  # neg vs pos
         assert _is_conservative_substitution("G", "W") is False  # small vs aromatic
+
+
+# ---- BaseClient TTL cache ----
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_json_caches_within_ttl():
+    route = respx.get("https://rest.uniprot.org/uniprotkb/P00533.json").mock(
+        return_value=httpx.Response(200, json={"primaryAccession": "P00533"})
+    )
+    client = UniProtClient()
+    a = await client.get_json("/uniprotkb/P00533.json")
+    b = await client.get_json("/uniprotkb/P00533.json")
+    assert a == b == {"primaryAccession": "P00533"}
+    assert route.call_count == 1  # second call served from cache
+    await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_json_distinct_params_not_shared():
+    r1 = respx.get("https://rest.uniprot.org/uniprotkb/search", params={"query": "a"}).mock(
+        return_value=httpx.Response(200, json={"q": "a"})
+    )
+    r2 = respx.get("https://rest.uniprot.org/uniprotkb/search", params={"query": "b"}).mock(
+        return_value=httpx.Response(200, json={"q": "b"})
+    )
+    client = UniProtClient()
+    assert await client.get_json("/uniprotkb/search", params={"query": "a"}) == {"q": "a"}
+    assert await client.get_json("/uniprotkb/search", params={"query": "b"}) == {"q": "b"}
+    assert r1.call_count == 1 and r2.call_count == 1
+    await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_pdb_get_entry_cached():
+    fixture = load_fixture("pdb_1M17_entry.json")
+    route = respx.get("https://data.rcsb.org/rest/v1/core/entry/1M17").mock(
+        return_value=httpx.Response(200, json=fixture)
+    )
+    client = PDBClient()
+    await client.get_entry("1M17")
+    await client.get_entry("1M17")
+    assert route.call_count == 1
+    await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_clinical_candidates_does_not_pollute_cache():
+    respx.get("https://www.ebi.ac.uk/chembl/api/data/mechanism.json").mock(
+        return_value=httpx.Response(200, json={"mechanisms": [
+            {"molecule_chembl_id": "CHEMBL1", "molecule_pref_name": None}
+        ]})
+    )
+    respx.get("https://www.ebi.ac.uk/chembl/api/data/molecule/CHEMBL1.json").mock(
+        return_value=httpx.Response(200, json={"pref_name": "DRUGX"})
+    )
+    client = ChEMBLClient()
+    first = await client.get_clinical_candidates("CHEMBL_TARGET_1")
+    assert first[0]["_resolved_name"] == "DRUGX"
+    # the cached raw response must NOT carry the injected private field
+    cached = client._cache[client._cache_key("/mechanism.json", {"target_chembl_id": "CHEMBL_TARGET_1", "limit": "100"})][1]
+    assert "_resolved_name" not in cached["mechanisms"][0]
+    await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_search_by_uniprot_204_returns_empty():
+    respx.post("https://search.rcsb.org/rcsbsearch/v2/query").mock(
+        return_value=httpx.Response(204)
+    )
+    client = PDBClient()
+    assert await client.search_by_uniprot("P99999") == []
+    await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_search_by_uniprot_server_error_raises_apierror():
+    respx.post("https://search.rcsb.org/rcsbsearch/v2/query").mock(
+        return_value=httpx.Response(500)
+    )
+    client = PDBClient()
+    with pytest.raises(APIError):
+        await client.search_by_uniprot("P00533")
+    await client.close()
+
+
+# ---- AlphaFold per-residue pLDDT failure paths ----
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_per_residue_plddt_returns_empty_on_download_failure():
+    respx.get("https://alphafold.ebi.ac.uk/api/prediction/P00533").mock(
+        return_value=httpx.Response(200, json=[{"cifUrl": "https://example.org/af.cif"}])
+    )
+    respx.get("https://example.org/af.cif").mock(return_value=httpx.Response(500))
+    client = AlphaFoldClient()
+    assert await client.get_per_residue_plddt("P00533") == []
+    await client.close()
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_per_residue_plddt_swallows_network_error():
+    respx.get("https://alphafold.ebi.ac.uk/api/prediction/P00533").mock(
+        return_value=httpx.Response(200, json=[{"cifUrl": "https://example.org/af.cif"}])
+    )
+    respx.get("https://example.org/af.cif").mock(side_effect=httpx.ConnectError("boom"))
+    client = AlphaFoldClient()
+    assert await client.get_per_residue_plddt("P00533") == []
+    await client.close()
+
+
+# ---- Conservation helper: tuple return ----
+
+
+def test_find_ortholog_residue_returns_score():
+    from pocketscout_mcp.server import _find_ortholog_residue
+    res, score = _find_ortholog_residue("MADEKVLR", "MADEKVLR", 3)
+    assert res == "E" and score == 1.0
+
+
+def test_find_ortholog_residue_low_score_on_mismatch():
+    from pocketscout_mcp.server import _find_ortholog_residue
+    res, score = _find_ortholog_residue("MADEKVLRST", "WWWWWWWWWW", 3)
+    assert score < 0.5
+
+
+def test_classify_contact_type():
+    from pocketscout_mcp.clients.pdb import classify_contact_type
+    # residue N/O to ligand N/O within 3.5 -> hydrogen_bond
+    assert classify_contact_type("SER", [("O", "N", 3.0)]) == "hydrogen_bond"
+    # charged residue, polar pair within 4.0 (not 3.5) -> ionic
+    assert classify_contact_type("ASP", [("O", "N", 3.8)]) == "ionic"
+    # carbon-carbon within 4.5 -> hydrophobic
+    assert classify_contact_type("LEU", [("C", "C", 4.0)]) == "hydrophobic"
+    # nothing in range -> unknown
+    assert classify_contact_type("LEU", [("C", "C", 6.0)]) == "unknown"
+
+
+def test_parse_abstracts():
+    from pocketscout_mcp.clients.pubmed import _parse_abstracts
+    xml = (
+        "<PubmedArticleSet><PubmedArticle><MedlineCitation>"
+        "<PMID>123</PMID><Article><Abstract>"
+        "<AbstractText>Hello world abstract.</AbstractText>"
+        "</Abstract></Article></MedlineCitation></PubmedArticle></PubmedArticleSet>"
+    )
+    out = _parse_abstracts(xml)
+    assert out["123"].startswith("Hello world")
+
+
+def test_parse_known_variants():
+    from pocketscout_mcp.clients.uniprot import parse_known_variants
+    entry = {"features": [
+        {"type": "Natural variant", "location": {"start": {"value": 790}, "end": {"value": 790}},
+         "description": "in lung cancer; gefitinib resistance",
+         "alternativeSequence": {"originalSequence": "T", "alternativeSequences": ["M"]}},
+        {"type": "Natural variant", "location": {"start": {"value": 1}, "end": {"value": 1}},
+         "description": "irrelevant", "alternativeSequence": {"originalSequence": "M", "alternativeSequences": ["L"]}},
+    ]}
+    out = parse_known_variants(entry, {790})
+    assert len(out) == 1
+    assert out[0]["position"] == 790
+    assert out[0]["original_residue"] == "T" and out[0]["variant_residue"] == "M"
+    assert "resistance" in out[0]["description"]
+
+
+@respx.mock
+@pytest.mark.asyncio
+async def test_get_ortholog_by_organism():
+    respx.get("https://rest.uniprot.org/uniprotkb/P00533.json").mock(
+        return_value=httpx.Response(200, json=load_fixture("uniprot_P00533.json"))
+    )
+    respx.get(url__regex=r"https://rest.uniprot.org/uniprotkb/search.*").mock(
+        return_value=httpx.Response(200, json={"results": [{"primaryAccession": "Q01279"}]})
+    )
+    client = UniProtClient()
+    acc = await client.get_ortholog("P00533", 10090)
+    assert acc == "Q01279"
+    await client.close()
+
+
+# ---- cluster_pockets ----
+
+
+def test_cluster_pockets():
+    from pocketscout_mcp.server import cluster_pockets
+    sites = [
+        {"pdb_id": "1AAA", "ligand_id": "STI", "site_type": "orthosteric", "residue_positions": [10, 11, 12, 13]},
+        {"pdb_id": "1BBB", "ligand_id": "AQ4", "site_type": "orthosteric", "residue_positions": [11, 12, 13, 14]},
+        {"pdb_id": "1CCC", "ligand_id": "GOL", "site_type": "allosteric", "residue_positions": [80, 81, 82]},
+    ]
+    clusters = cluster_pockets(sites, jaccard_threshold=0.3)
+    assert len(clusters) == 2
+    big = max(clusters, key=lambda c: c["structure_count"])
+    assert big["structure_count"] == 2
+    assert set(big["residue_union"]) == {10, 11, 12, 13, 14}
+    assert ("1AAA", "STI") in big["occurrences"]

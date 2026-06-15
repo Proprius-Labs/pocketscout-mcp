@@ -2,31 +2,36 @@
 
 Scout the binding landscape before you design the binder.
 
-An MCP server that aggregates structural, chemical, and literature data
-to evaluate druggable pockets on protein targets before computational
-design. Designed to fill the gap between "I have a target" and
-"I'm running RFdiffusion."
+A FastMCP server for drug-target binding-site triage: it aggregates
+structural, chemical, conservation, and literature data into a briefing
+on a protein's druggable pockets. Especially useful as the reconnaissance
+step before computational binder design — the gap between "I have a target"
+and "I'm running RFdiffusion."
 
 Tools are ordered to reflect the natural scientific workflow:
-1. characterize_target — biological context + AlphaFold confidence
-2. get_related_structures — structural coverage for the target
-3. get_binding_sites — map known pockets from co-crystals
-4. get_ligand_history — competitive landscape from ChEMBL
-5. check_conservation — human vs. mouse translatability
-6. search_target_literature — recent structural/design insights
+1. CharacterizeTarget — biological context + AlphaFold confidence (per-residue pLDDT)
+2. GetRelatedStructures — structural coverage for the target
+3. GetBindingSites — map known pockets from co-crystals (with contact types)
+4. GetLigandHistory — competitive landscape from ChEMBL
+5. CheckConservation — human vs. mouse/rat/cynomolgus translatability
+6. SearchTargetLiterature — recent structural/design insights
+7. CheckKnownVariants — disease/resistance variants at binding residues
+8. ConsolidateBindingSites — union of pockets across all structures
 
-The binding_site_assessment prompt orchestrates all tools into a
-ranked recommendation.
+Two prompts orchestrate the tools: target_briefing (quick triage) and
+binding_site_assessment (in-depth ranked recommendation).
 """
 
 from __future__ import annotations
+
+from contextlib import asynccontextmanager
 
 from fastmcp import FastMCP
 from mcp.types import Icon
 from starlette.requests import Request
 from starlette.responses import Response
 
-from .clients.uniprot import UniProtClient, parse_target_profile
+from .clients.uniprot import UniProtClient, parse_target_profile, parse_known_variants
 from .clients.pdb import PDBClient, parse_structure_metadata, ARTIFACT_LIGANDS
 from .clients.alphafold import AlphaFoldClient, analyze_confidence
 from .clients.chembl import ChEMBLClient, analyze_bioactivities
@@ -44,9 +49,14 @@ from .models import (
     RelatedStructuresResult,
     LigandHistory,
     ResidueConservation,
+    SpeciesConservation,
     ConservationResult,
+    KnownVariant,
+    VariantCheckResult,
     PaperResult,
     LiteratureResult,
+    ConsolidatedPocket,
+    ConsolidationResult,
 )
 
 # ---------------------------------------------------------------------------
@@ -79,15 +89,33 @@ ICON_SVG = b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill=
   <circle cx="12" cy="12" r="0.95" fill="#D97706" stroke="none"/>
 </svg>"""
 
+uniprot = UniProtClient()
+pdb = PDBClient()
+alphafold = AlphaFoldClient()
+chembl = ChEMBLClient()
+pubmed = PubMedClient()
+
+
+@asynccontextmanager
+async def _lifespan(app):
+    try:
+        yield
+    finally:
+        for c in (uniprot, pdb, alphafold, chembl, pubmed):
+            await c.close()
+
+
 mcp = FastMCP(
     "PocketScout",
     instructions=(
-        "Binding site intelligence for drug target assessment. "
-        "Aggregates structural, chemical, and literature data to evaluate "
-        "druggable pockets before computational design. "
-        "Use the binding_site_assessment prompt for a complete workflow."
+        "Fast binding-site intelligence for drug-target triage. Pulls together "
+        "structural, chemical, conservation, and literature data into a briefing "
+        "on a protein's druggable pockets. Use the target_briefing prompt for a "
+        "quick assessment, or binding_site_assessment for an in-depth, "
+        "design-focused workup."
     ),
     icons=ICONS,
+    lifespan=_lifespan,
 )
 
 
@@ -99,12 +127,6 @@ async def favicon(request: Request) -> Response:
         media_type="image/svg+xml",
         headers={"Cache-Control": "public, max-age=86400"},
     )
-
-uniprot = UniProtClient()
-pdb = PDBClient()
-alphafold = AlphaFoldClient()
-chembl = ChEMBLClient()
-pubmed = PubMedClient()
 
 
 # ---------------------------------------------------------------------------
@@ -177,7 +199,11 @@ async def characterize_target(
     # Fetch AlphaFold confidence
     try:
         af_prediction = await alphafold.get_prediction(uniprot_id)
-        af_data = analyze_confidence(af_prediction, profile_data["sequence_length"])
+        try:
+            per_residue = await alphafold.get_per_residue_plddt(uniprot_id)
+        except APIError:
+            per_residue = []
+        af_data = analyze_confidence(af_prediction, profile_data["sequence_length"], per_residue or None)
     except APIError:
         af_data = {
             "overall_confidence": None,
@@ -232,7 +258,7 @@ async def get_related_structures(
     binding site landscape to analyze. A target with only 1-2 structures
     (or only apo/unliganded structures) has less structural evidence.
 
-    Call this AFTER characterize_target and BEFORE get_binding_sites to
+    Call this AFTER CharacterizeTarget and BEFORE GetBindingSites to
     identify which structures to analyze for pockets.
     """
     if not pdb_id and not uniprot_id:
@@ -249,10 +275,20 @@ async def get_related_structures(
     except APIError as e:
         return {"error": f"PDB search failed: {e}"}
 
+    # Fetch UniProt profile once — provides gene name and organism for all structures
+    organism = "unknown"
+    gene_name = ""
+    try:
+        profile = parse_target_profile(await uniprot.get_entry(uniprot_id))
+        gene_name = profile["gene_name"]
+        organism = profile["organism"]
+    except APIError:
+        pass
+
     if not pdb_ids:
         return {
             "uniprot_id": uniprot_id,
-            "gene_name": "",
+            "gene_name": gene_name,
             "total_structures": 0,
             "structures": [],
             "unique_ligands": [],
@@ -261,61 +297,52 @@ async def get_related_structures(
             "interpretation": "No experimental structures found in PDB. Consider using AlphaFold predicted structure, but note that predicted binding sites have lower reliability than those from experimental structures.",
         }
 
-    # Fetch metadata for each structure (limit to top entries to avoid slow response)
-    structures = []
+    # Fetch metadata for each structure in parallel with bounded concurrency
+    import asyncio
+    sem = asyncio.Semaphore(8)
+
+    async def _fetch(pid: str) -> RelatedStructure | None:
+        async with sem:
+            try:
+                entry = await pdb.get_entry(pid)
+                meta = parse_structure_metadata(entry)
+                np_entities = await pdb.get_nonpolymer_entities(pid)
+            except APIError:
+                return None
+        ligand_ids = []
+        for np in np_entities:
+            ids = np.get("rcsb_nonpolymer_entity_container_identifiers", {})
+            comp_id = ids.get("nonpolymer_comp_id", "") or ids.get("comp_id", "")
+            if not comp_id:
+                pdbx = np.get("pdbx_entity_nonpoly", {})
+                if isinstance(pdbx, list) and pdbx:
+                    comp_id = pdbx[0].get("comp_id", "")
+                elif isinstance(pdbx, dict):
+                    comp_id = pdbx.get("comp_id", "")
+            if comp_id and comp_id not in ARTIFACT_LIGANDS:
+                ligand_ids.append(comp_id)
+        return RelatedStructure(
+            pdb_id=pid,
+            title=meta["title"],
+            resolution=meta["resolution"],
+            method=meta["method"],
+            organism=organism,
+            ligand_ids=ligand_ids,
+            release_date=meta["release_date"],
+        )
+
+    fetched = await asyncio.gather(*[_fetch(pid) for pid in pdb_ids[:limit]])
+    structures = [s for s in fetched if s is not None]
     all_ligands = set()
     has_apo = False
-
-    for pid in pdb_ids[:limit]:
-        try:
-            entry = await pdb.get_entry(pid)
-            meta = parse_structure_metadata(entry)
-
-            # Get ligands
-            np_entities = await pdb.get_nonpolymer_entities(pid)
-            ligand_ids = []
-            for np in np_entities:
-                ids = np.get("rcsb_nonpolymer_entity_container_identifiers", {})
-                comp_id = ids.get("nonpolymer_comp_id", "") or ids.get("comp_id", "")
-                if not comp_id:
-                    pdbx = np.get("pdbx_entity_nonpoly", {})
-                    if isinstance(pdbx, list) and pdbx:
-                        comp_id = pdbx[0].get("comp_id", "")
-                    elif isinstance(pdbx, dict):
-                        comp_id = pdbx.get("comp_id", "")
-                if comp_id and comp_id not in ARTIFACT_LIGANDS:
-                    ligand_ids.append(comp_id)
-                    all_ligands.add(comp_id)
-
-            if not ligand_ids:
-                has_apo = True
-
-            organism = "unknown"
-            entities = entry.get("rcsb_entry_container_identifiers", {}).get("polymer_entity_ids", [])
-
-            structures.append(RelatedStructure(
-                pdb_id=pid,
-                title=meta["title"],
-                resolution=meta["resolution"],
-                method=meta["method"],
-                organism=organism,
-                ligand_ids=ligand_ids,
-                release_date=meta["release_date"],
-            ))
-        except APIError:
-            continue
+    for s in structures:
+        all_ligands.update(s.ligand_ids)
+        if not s.ligand_ids:
+            has_apo = True
 
     # Sort by resolution
     structures.sort(key=lambda s: s.resolution if s.resolution else 99.0)
     best_res = structures[0].resolution if structures else None
-
-    # Get gene name from UniProt (quick)
-    gene_name = ""
-    try:
-        entry = await uniprot.get_entry(uniprot_id)
-        gene_name = parse_target_profile(entry)["gene_name"]
-    except APIError:
-        pass
 
     # Interpretation
     interp_parts = [f"{len(structures)} experimental structures found for {gene_name or uniprot_id}."]
@@ -364,7 +391,7 @@ async def get_binding_sites(pdb_id: str) -> dict:
     - Large flat interfaces (> 30 residues) favor biologics or de novo protein binders
     - Allosteric sites may offer selectivity advantages over orthosteric sites
 
-    Call this on specific PDB IDs identified by get_related_structures.
+    Call this on specific PDB IDs identified by GetRelatedStructures.
     For comprehensive analysis, call on multiple structures with different
     co-crystallized ligands to build a complete pocket map.
     """
@@ -382,7 +409,7 @@ async def get_binding_sites(pdb_id: str) -> dict:
             num_sites=0,
             sites=[],
             artifact_ligands_filtered=artifacts,
-            interpretation=f"No non-artifact ligands found in {pdb_id}. This is an apo structure or contains only crystallization artifacts ({', '.join(artifacts) if artifacts else 'none detected'}). Check other structures for this target via get_related_structures.",
+            interpretation=f"No non-artifact ligands found in {pdb_id}. This is an apo structure or contains only crystallization artifacts ({', '.join(artifacts) if artifacts else 'none detected'}). Check other structures for this target via GetRelatedStructures.",
         ).model_dump()
 
     # Build binding sites from ligand data
@@ -401,6 +428,7 @@ async def get_binding_sites(pdb_id: str) -> dict:
                 chain=c["chain"],
                 residue_name=c["residue_name"],
                 residue_number=c["residue_number"],
+                contact_type=c.get("contact_type", "unknown"),
             )
             for c in contacts
         ]
@@ -548,6 +576,14 @@ async def get_ligand_history(
 # Tool 5: check_conservation
 # ---------------------------------------------------------------------------
 
+# NCBI taxonomy IDs for preclinical model organisms
+_ORGANISM_IDS: dict[str, int] = {
+    "mouse": 10090,      # Mus musculus
+    "rat": 10116,        # Rattus norvegicus
+    "cynomolgus": 9541,  # Macaca fascicularis — closest primate preclinical model
+}
+
+
 @mcp.tool(
     name="CheckConservation",
     title="Check Conservation",
@@ -557,25 +593,34 @@ async def get_ligand_history(
 async def check_conservation(
     uniprot_id: str,
     residue_positions: list[int],
+    species: list[str] | None = None,
 ) -> dict:
-    """Check human vs. mouse conservation at specific binding site residues.
+    """Check conservation at binding site residues across mouse, rat, and cynomolgus.
 
     Critical for preclinical translatability: if key binding site residues
-    differ between human and mouse, mouse efficacy models may not predict
-    human response. Non-conserved positions are specifically flagged.
+    differ between human and a preclinical model, that species' efficacy
+    data may not predict human response. Non-conserved positions are flagged
+    for each species individually.
 
-    Conservation > 90%: excellent — mouse model should recapitulate binding.
-    Conservation 70-90%: acceptable — verify non-conserved positions aren't
-    in the binding interface.
-    Conservation < 70%: caution — consider rat, cyno, or humanized models.
+    Conservation > 90%: excellent — species should recapitulate human binding.
+    Conservation 70-90%: acceptable — verify non-conserved positions are not
+    critical contact residues.
+    Conservation < 70%: caution for that species — consider a better-conserved
+    alternative. Cynomolgus (macaque) is the closest primate model and often
+    shows higher conservation than rodents when the target has primate-specific
+    sequence features.
 
-    Provide the human UniProt accession and a list of residue positions
-    (from get_binding_sites) to check.
+    Default species checked: mouse, rat, cynomolgus. Pass a custom `species`
+    list to restrict or reorder (supported values: 'mouse', 'rat', 'cynomolgus').
+
+    Provide the human UniProt accession and residue positions from GetBindingSites.
     """
     if not residue_positions:
         return {"error": "Provide a list of residue positions to check"}
 
-    # Get human sequence
+    requested_species = species if species is not None else ["mouse", "rat", "cynomolgus"]
+
+    # Fetch human sequence once
     try:
         human_seq = await uniprot.get_sequence(uniprot_id)
     except APIError as e:
@@ -584,93 +629,188 @@ async def check_conservation(
     if not human_seq:
         return {"error": f"No sequence found for {uniprot_id}"}
 
-    # Find mouse ortholog
-    mouse_id = await uniprot.get_mouse_ortholog(uniprot_id)
-    if not mouse_id:
-        return ConservationResult(
-            human_uniprot=uniprot_id,
-            mouse_uniprot=None,
-            residues_checked=len(residue_positions),
-            residues_conserved=0,
-            conservation_fraction=0.0,
-            non_conserved=[],
-            interpretation=f"No mouse ortholog found for {uniprot_id}. Cannot assess cross-species conservation. This may indicate the target is not conserved in rodents, or the ortholog has a different gene name.",
-        ).model_dump()
+    species_results: list[SpeciesConservation] = []
 
-    try:
-        mouse_seq = await uniprot.get_sequence(mouse_id)
-    except APIError:
-        return ConservationResult(
-            human_uniprot=uniprot_id,
-            mouse_uniprot=mouse_id,
-            residues_checked=len(residue_positions),
-            residues_conserved=0,
-            conservation_fraction=0.0,
-            non_conserved=[],
-            interpretation=f"Found mouse ortholog {mouse_id} but failed to retrieve sequence.",
-        ).model_dump()
-
-    # Compare residues using local context matching to handle insertions/deletions.
-    # For each human position, we extract a window of surrounding sequence and
-    # find where it occurs in the mouse sequence, then compare the central residue.
-    conserved_count = 0
-    non_conserved = []
-
-    for pos in residue_positions:
-        idx = pos - 1  # Convert to 0-based
-        human_res = human_seq[idx] if idx < len(human_seq) else "?"
-
-        # Find the corresponding mouse residue by context matching
-        mouse_res = _find_ortholog_residue(human_seq, mouse_seq, idx)
-
-        is_same = human_res == mouse_res
-        is_conservative = _is_conservative_substitution(human_res, mouse_res)
-
-        if is_same:
-            conserved_count += 1
-        else:
-            non_conserved.append(ResidueConservation(
-                position=pos,
-                human_residue=human_res,
-                mouse_residue=mouse_res,
-                is_conserved=False,
-                is_conservative_substitution=is_conservative,
+    for name in requested_species:
+        org_id = _ORGANISM_IDS.get(name)
+        if org_id is None:
+            # Unknown species name — skip silently (or note it)
+            species_results.append(SpeciesConservation(
+                species=name,
+                organism_id=0,
+                note=f"Unknown species '{name}'. Supported: mouse, rat, cynomolgus.",
             ))
+            continue
 
-    fraction = conserved_count / len(residue_positions) if residue_positions else 0.0
+        # Resolve ortholog accession
+        ortholog = await uniprot.get_ortholog(uniprot_id, org_id)
+        if not ortholog:
+            species_results.append(SpeciesConservation(
+                species=name,
+                organism_id=org_id,
+                ortholog_uniprot=None,
+                note=f"No ortholog found for {uniprot_id} in {name} (organism_id={org_id}).",
+            ))
+            continue
 
-    # Generate interpretation
-    if fraction > 0.9:
-        interp = f"Excellent conservation ({fraction:.0%}). Mouse models should faithfully recapitulate human target binding."
-    elif fraction > 0.7:
-        non_cons_positions = [str(r.position) for r in non_conserved]
-        interp = (
-            f"Good conservation ({fraction:.0%}). "
-            f"Non-conserved positions at: {', '.join(non_cons_positions)}. "
-            "Verify these positions are not critical contact residues in your binding site of interest."
-        )
-    else:
-        interp = (
-            f"Low conservation ({fraction:.0%}). "
-            "Significant differences between human and mouse at binding site residues. "
-            "Mouse efficacy models may not predict human response. Consider cynomolgus monkey, "
-            "humanized mouse models, or other species with better conservation."
-        )
+        # Fetch ortholog sequence
+        try:
+            ortholog_seq = await uniprot.get_sequence(ortholog)
+        except APIError as e:
+            species_results.append(SpeciesConservation(
+                species=name,
+                organism_id=org_id,
+                ortholog_uniprot=ortholog,
+                note=f"Found {name} ortholog {ortholog} but failed to retrieve sequence: {e}",
+            ))
+            continue
+
+        # Per-position comparison using local context matching to handle indels
+        conserved_count = 0
+        non_conserved: list[ResidueConservation] = []
+
+        for pos in residue_positions:
+            idx = pos - 1  # Convert to 0-based
+            human_res = human_seq[idx] if idx < len(human_seq) else "?"
+
+            ortholog_res, map_score = _find_ortholog_residue(human_seq, ortholog_seq, idx)
+            uncertain = map_score < 0.5
+
+            is_same = human_res == ortholog_res
+            is_conservative = _is_conservative_substitution(human_res, ortholog_res)
+
+            if is_same:
+                conserved_count += 1
+            else:
+                non_conserved.append(ResidueConservation(
+                    position=pos,
+                    human_residue=human_res,
+                    ortholog_residue=ortholog_res,
+                    is_conserved=False,
+                    is_conservative_substitution=is_conservative,
+                    mapping_uncertain=uncertain,
+                ))
+
+        fraction = conserved_count / len(residue_positions) if residue_positions else 0.0
+        species_results.append(SpeciesConservation(
+            species=name,
+            organism_id=org_id,
+            ortholog_uniprot=ortholog,
+            residues_conserved=conserved_count,
+            conservation_fraction=round(fraction, 3),
+            non_conserved=non_conserved,
+        ))
+
+    # Build aggregate interpretation
+    interp = _build_conservation_interpretation(uniprot_id, residue_positions, species_results)
 
     result = ConservationResult(
         human_uniprot=uniprot_id,
-        mouse_uniprot=mouse_id,
         residues_checked=len(residue_positions),
-        residues_conserved=conserved_count,
-        conservation_fraction=round(fraction, 3),
-        non_conserved=non_conserved,
+        species_results=species_results,
         interpretation=interp,
     )
     return result.model_dump()
 
 
+def _build_conservation_interpretation(
+    uniprot_id: str,
+    residue_positions: list[int],
+    species_results: list[SpeciesConservation],
+) -> str:
+    """Build a human-readable aggregate interpretation of multi-species conservation."""
+    parts: list[str] = []
+
+    # Per-species fractions summary
+    frac_summaries = []
+    for sr in species_results:
+        if sr.ortholog_uniprot:
+            pct = f"{sr.conservation_fraction:.0%}"
+            frac_summaries.append(f"{sr.species} {pct}")
+        else:
+            frac_summaries.append(f"{sr.species} (no ortholog)")
+    if frac_summaries:
+        parts.append("Conservation at checked residues: " + ", ".join(frac_summaries) + ".")
+
+    # Identify best model (highest fraction among species WITH an ortholog)
+    with_ortholog = [sr for sr in species_results if sr.ortholog_uniprot]
+    if with_ortholog:
+        best = max(with_ortholog, key=lambda sr: sr.conservation_fraction)
+        parts.append(
+            f"Recommended preclinical model: {best.species} "
+            f"({best.conservation_fraction:.0%} conservation, UniProt {best.ortholog_uniprot})."
+        )
+
+    # Flag any species below 0.7
+    low = [sr for sr in with_ortholog if sr.conservation_fraction < 0.7]
+    for sr in low:
+        non_pos = [str(r.position) for r in sr.non_conserved]
+        parts.append(
+            f"Caution: {sr.species} conservation is low ({sr.conservation_fraction:.0%}). "
+            f"Non-conserved positions: {', '.join(non_pos) if non_pos else 'none listed'}. "
+            f"{sr.species.capitalize()} models may not recapitulate human target binding at these residues."
+        )
+
+    # Flag species without orthologs
+    missing = [sr for sr in species_results if not sr.ortholog_uniprot]
+    for sr in missing:
+        parts.append(f"No ortholog found for {uniprot_id} in {sr.species} — conservation cannot be assessed.")
+
+    # Flag uncertain mappings across all species
+    total_uncertain = sum(
+        sum(1 for r in sr.non_conserved if r.mapping_uncertain)
+        for sr in with_ortholog
+    )
+    if total_uncertain > 0:
+        parts.append(
+            f"{total_uncertain} position(s) across species had low-confidence ortholog mapping — treat those calls cautiously."
+        )
+
+    return " ".join(parts) if parts else "No conservation data available."
+
+
 # ---------------------------------------------------------------------------
-# Tool 6: search_target_literature
+# Tool 6: check_known_variants
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="CheckKnownVariants",
+    title="Check Known Variants",
+    tags={"variants", "resistance"},
+    annotations=READ_ONLY_ANNOTATIONS,
+)
+async def check_known_variants(uniprot_id: str, residue_positions: list[int]) -> dict:
+    """Flag known sequence variants and mutagenesis hits at binding-site residues.
+
+    Binding-site residues that are documented disease/resistance variants (e.g.
+    EGFR T790M) mark pockets that mutate under drug pressure — a key risk signal
+    when choosing where to design. Source: UniProt Natural variant + Mutagenesis
+    features. Provide the human UniProt accession and positions from GetBindingSites.
+    """
+    if not residue_positions:
+        return {"error": "Provide a list of residue positions to check"}
+    try:
+        entry = await uniprot.get_entry(uniprot_id)
+    except APIError as e:
+        return {"error": f"Failed to fetch UniProt entry: {e}"}
+    found = parse_known_variants(entry, set(residue_positions))
+    variants = [KnownVariant(**v) for v in found]
+    if variants:
+        interp = (f"{len(variants)} known variant(s) at the queried binding-site residues: "
+                  + "; ".join(f"{v.original_residue}{v.position}{v.variant_residue} ({v.feature_type})" for v in variants)
+                  + ". Variants at contact residues can drive resistance or alter binding — design with this in mind.")
+    else:
+        interp = "No known sequence variants or mutagenesis records at the queried residues — the pocket appears genetically stable in UniProt."
+    return VariantCheckResult(
+        uniprot_id=uniprot_id,
+        positions_checked=len(residue_positions),
+        variants=variants,
+        interpretation=interp,
+    ).model_dump()
+
+
+# ---------------------------------------------------------------------------
+# Tool 7: search_target_literature
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
@@ -696,8 +836,9 @@ async def search_target_literature(
     - context='antibody' for biologic-focused papers
     - context='oncology' for disease-specific context
 
-    Call this LAST — after structural and chemical data — to see if the
-    literature reveals insights not captured in database records (e.g.,
+    Call this LAST — after CharacterizeTarget, GetRelatedStructures,
+    GetBindingSites, GetLigandHistory, and CheckConservation — to see if
+    the literature reveals insights not captured in database records (e.g.,
     cryptic sites found by MD simulation, unpublished allosteric mechanisms).
     """
     try:
@@ -731,6 +872,132 @@ async def search_target_literature(
 
 
 # ---------------------------------------------------------------------------
+# Clustering helper (pure function — unit-tested independently)
+# ---------------------------------------------------------------------------
+
+def cluster_pockets(sites: list[dict], jaccard_threshold: float = 0.3) -> list[dict]:
+    """Greedy single-link clustering of pockets across structures by residue overlap.
+
+    Each site dict must have: pdb_id, ligand_id, site_type, residue_positions.
+    Sites with no residue_positions are skipped.
+    Returns clusters sorted by structure_count descending.
+    """
+    clusters: list[dict] = []
+    for site in sites:
+        rset = set(site["residue_positions"])
+        if not rset:
+            continue
+        placed = False
+        for cl in clusters:
+            inter = len(cl["_residues"] & rset)
+            union = len(cl["_residues"] | rset)
+            if union and inter / union >= jaccard_threshold:
+                cl["_residues"] |= rset
+                cl["occurrences"].append((site["pdb_id"], site["ligand_id"]))
+                cl["_types"].append(site["site_type"])
+                placed = True
+                break
+        if not placed:
+            clusters.append({
+                "_residues": set(rset),
+                "occurrences": [(site["pdb_id"], site["ligand_id"])],
+                "_types": [site["site_type"]],
+            })
+    out = []
+    for cl in clusters:
+        types = cl["_types"]
+        out.append({
+            "residue_union": sorted(cl["_residues"]),
+            "occurrences": cl["occurrences"],
+            "structure_count": len({pid for pid, _ in cl["occurrences"]}),
+            "representative_site_type": max(set(types), key=types.count),
+        })
+    out.sort(key=lambda c: c["structure_count"], reverse=True)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Tool 8: consolidate_binding_sites
+# ---------------------------------------------------------------------------
+
+@mcp.tool(name="ConsolidateBindingSites", title="Consolidate Binding Sites",
+          tags={"structure", "binding-site"}, annotations=READ_ONLY_ANNOTATIONS)
+async def consolidate_binding_sites(
+    uniprot_id: str | None = None,
+    pdb_id: str | None = None,
+    limit: int = 10,
+) -> dict:
+    """Map the union of binding pockets across all structures of a target.
+
+    Fans out GetBindingSites over the top structures and clusters pockets by
+    residue overlap, so recurrent pockets (e.g. the ATP site appearing in most
+    structures) stand out from one-off or artifact sites. The heaviest tool —
+    downloads several coordinate files. Provide uniprot_id (preferred) or pdb_id.
+    """
+    if not uniprot_id and not pdb_id:
+        return {"error": "Provide either uniprot_id or pdb_id"}
+
+    _, uniprot_id = await _resolve_identifiers(pdb_id, uniprot_id)
+
+    if not uniprot_id:
+        return {"error": "Could not resolve UniProt ID"}
+
+    try:
+        pdb_ids = await pdb.search_by_uniprot(uniprot_id, limit=limit)
+    except APIError as e:
+        return {"error": f"PDB search failed: {e}"}
+
+    import asyncio
+    sem = asyncio.Semaphore(6)
+
+    async def _sites(pid: str) -> list[dict]:
+        async with sem:
+            try:
+                data = await pdb.get_binding_sites(pid)
+            except APIError:
+                return []
+        out = []
+        for lig in data.get("ligands", []):
+            positions = sorted({
+                c["residue_number"]
+                for c in lig.get("contacts", [])
+                if c["residue_number"] > 0
+            })
+            if positions:
+                out.append({
+                    "pdb_id": pid.upper(),
+                    "ligand_id": lig.get("comp_id", ""),
+                    "site_type": _classify_site_type(
+                        lig.get("comp_id", ""), lig.get("name", "")
+                    ),
+                    "residue_positions": positions,
+                })
+        return out
+
+    per_structure = await asyncio.gather(*[_sites(p) for p in pdb_ids])
+    all_sites = [s for group in per_structure for s in group]
+    clusters = cluster_pockets(all_sites)
+    pockets = [ConsolidatedPocket(**c) for c in clusters]
+
+    if pockets:
+        top = pockets[0]
+        interp = (
+            f"{len(pockets)} distinct pocket(s) across {len(pdb_ids)} structures. "
+            f"Most recurrent: a {top.representative_site_type} pocket in {top.structure_count} structure(s) "
+            f"(residues {top.residue_union[0]}–{top.residue_union[-1]}) — the dominant, best-validated site."
+        )
+    else:
+        interp = f"No non-artifact pockets found across {len(pdb_ids)} structures."
+
+    return ConsolidationResult(
+        uniprot_id=uniprot_id,
+        structures_analyzed=len(pdb_ids),
+        pockets=pockets,
+        interpretation=interp,
+    ).model_dump()
+
+
+# ---------------------------------------------------------------------------
 # Orchestration prompt
 # ---------------------------------------------------------------------------
 
@@ -759,33 +1026,33 @@ def binding_site_assessment(
 Follow this systematic workflow using PocketScout tools:
 
 **Step 1 — Target Context**
-Call characterize_target with pdb_id="{pdb_id}".
+Call CharacterizeTarget with pdb_id="{pdb_id}".
 Establish: What is this protein? What family? Where is it located?
 Note any AlphaFold confidence warnings for later cross-referencing.
 
 **Step 2 — Structural Coverage**
-Call get_related_structures with pdb_id="{pdb_id}".
+Call GetRelatedStructures with pdb_id="{pdb_id}".
 Assess: How many structures exist? What ligands? What quality?
 Identify the best structures for binding site analysis.
 
 **Step 3 — Binding Site Map**
-Call get_binding_sites on the most informative structure(s).
+Call GetBindingSites on the most informative structure(s).
 For well-studied targets, analyze 2-3 structures with different ligands
 to capture multiple pocket conformations.
 Map: Known binding sites, classification, druggability.
 
 **Step 4 — Competitive Landscape**
-Call get_ligand_history using the UniProt ID from Step 1.
+Call GetLigandHistory using the UniProt ID from Step 1.
 Assess: Is this target crowded or greenfield?
 What modalities have been tried? Where is the opportunity?
 
 **Step 5 — Translatability**
-Call check_conservation with binding site residue positions from Step 3.
+Call CheckConservation with binding site residue positions from Step 3.
 Flag: Are key contact residues conserved in mouse?
 What are the implications for preclinical models?
 
 **Step 6 — Literature Context**
-Call search_target_literature with the gene name from Step 1.
+Call SearchTargetLiterature with the gene name from Step 1.
 Look for: Cryptic/allosteric sites, resistance mutations, recent
 structural insights not captured in database records.
 
@@ -802,6 +1069,26 @@ Combine all evidence into a ranked assessment:
 
 Be specific and evidence-based. Cite PDB IDs, ChEMBL data, and
 literature where relevant. Flag uncertainties clearly."""
+
+
+# ---------------------------------------------------------------------------
+# Quick triage prompt
+# ---------------------------------------------------------------------------
+
+@mcp.prompt()
+def target_briefing(target: str) -> str:
+    """Quick triage briefing for a drug target — what it is and where its pockets are."""
+    return f"""Give me a fast binding-site briefing on {target} using PocketScout.
+
+1. CharacterizeTarget — what is this protein (family, location, structure confidence)?
+2. GetRelatedStructures — how well-characterized is it structurally?
+3. GetBindingSites on the best structure — what pockets exist and how druggable are they?
+4. GetLigandHistory — is the chemical space crowded or open?
+5. SearchTargetLiterature — any notable allosteric/cryptic sites or resistance themes?
+
+Summarize in a short briefing: what the target is, the main pocket(s), the
+competitive landscape, and the one or two things worth knowing before going
+deeper. Keep it concise — this is triage, not a full design workup."""
 
 
 # ---------------------------------------------------------------------------
@@ -893,17 +1180,21 @@ async def _compute_construct_coverage(pdb_id: str) -> ConstructCoverage | None:
 
 
 def _find_ortholog_residue(
-    human_seq: str, mouse_seq: str, human_idx: int, window: int = 7
-) -> str:
-    """Find the mouse residue corresponding to a human sequence position.
+    human_seq: str, ortholog_seq: str, human_idx: int, window: int = 7
+) -> tuple[str, float]:
+    """Find the ortholog residue corresponding to a human sequence position.
 
     Uses local context matching: extracts a window around the human position,
-    searches for the best match in the mouse sequence, and returns the
+    searches for the best match in the ortholog sequence, and returns the
     corresponding central residue. This handles insertions/deletions that
     shift numbering between orthologs.
+
+    Returns a tuple of (residue, match_fraction) where match_fraction is
+    the fraction of the context window that matched at the best position.
+    A low match_fraction (<0.5) indicates an uncertain mapping.
     """
     if human_idx >= len(human_seq):
-        return "?"
+        return "?", 0.0
 
     # Extract context window from human sequence
     start = max(0, human_idx - window)
@@ -911,26 +1202,32 @@ def _find_ortholog_residue(
     human_context = human_seq[start:end]
     offset_in_context = human_idx - start
 
-    # Search for best matching position in mouse sequence
+    # Guard against empty context (degenerate case)
+    if len(human_context) == 0:
+        return "?", 0.0
+
+    # Search for best matching position in ortholog sequence
     best_score = -1
-    best_mouse_idx = human_idx  # fallback to same position
+    best_ortholog_idx = human_idx  # fallback to same position
 
     # Search within a reasonable range around the expected position
     search_start = max(0, human_idx - 50)
-    search_end = min(len(mouse_seq) - len(human_context) + 1, human_idx + 50)
+    search_end = min(len(ortholog_seq) - len(human_context) + 1, human_idx + 50)
 
     for i in range(search_start, search_end):
-        mouse_window = mouse_seq[i:i + len(human_context)]
-        if len(mouse_window) < len(human_context):
+        ortholog_window = ortholog_seq[i:i + len(human_context)]
+        if len(ortholog_window) < len(human_context):
             continue
-        score = sum(1 for a, b in zip(human_context, mouse_window) if a == b)
+        score = sum(1 for a, b in zip(human_context, ortholog_window) if a == b)
         if score > best_score:
             best_score = score
-            best_mouse_idx = i + offset_in_context
+            best_ortholog_idx = i + offset_in_context
 
-    if best_mouse_idx < len(mouse_seq):
-        return mouse_seq[best_mouse_idx]
-    return "?"
+    match_fraction = round(best_score / len(human_context), 3) if best_score >= 0 else 0.0
+
+    if best_ortholog_idx < len(ortholog_seq):
+        return ortholog_seq[best_ortholog_idx], match_fraction
+    return "?", match_fraction
 
 
 # Conservative amino acid substitution groups

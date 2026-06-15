@@ -2,19 +2,19 @@
 
 ## What This Is
 
-PocketScout is an MCP server for drug target binding site intelligence. It fills the gap between "I have a target" and "I'm running RFdiffusion" — the reconnaissance step where a scientist gathers and synthesizes everything known about a protein's binding landscape before computational design.
+PocketScout is a fast triage tool for drug-target binding sites — it gives an AI assistant the tools to pull together everything known about a protein's pockets (structure, chemistry, conservation, literature) into a single briefing in minutes. The flagship use case is reconnaissance before computational binder design: filling the gap between "I have a target" and "I'm running RFdiffusion."
 
 Built with FastMCP 3.0, Python 3.11+, httpx, Pydantic v2.
 
 ## Who This Is For
 
-Drug discovery scientists (computational and bench) who need to systematically evaluate where on a protein to design a binder. Also serves as a demonstration of domain-informed MCP server design for Anthropic's life sciences ecosystem.
+Drug discovery scientists (computational and bench) who need a fast binding-site briefing — whether evaluating an unfamiliar target, onboarding a new team member, screening candidates in a scouting or BD role, or preparing a target for de novo binder design. Also serves as a demonstration of domain-informed MCP server design for Anthropic's life sciences ecosystem.
 
 ## Design Philosophy
 
 1. **Tool descriptions are prompt engineering.** Claude reads the docstrings and Field descriptions to decide when/how to use each tool. Every description should encode scientific reasoning, not just data labels. This is where domain expertise matters most.
 
-2. **Composition over coverage.** 6 tools that compose into a real workflow > 30 isolated database wrappers. The tools are ordered to reflect how expert medicinal chemists actually evaluate targets.
+2. **Composition over coverage.** 8 tools that compose into a real workflow > 30 isolated database wrappers. The tools are ordered to reflect how expert medicinal chemists actually evaluate targets.
 
 3. **Pre-compute interpretations.** Each tool returns raw data AND an `interpretation` field with scientific context. This helps Claude reason without dumping raw JSON into its context.
 
@@ -30,7 +30,7 @@ pocketscout-mcp/
 ├── pyproject.toml         
 ├── README.md              ← Design rationale (important for portfolio)
 ├── src/pocketscout_mcp/
-│   ├── server.py          ← MCP server: 6 tools + 1 prompt
+│   ├── server.py          ← MCP server: 8 tools + 2 prompts
 │   ├── models.py          ← Pydantic models (field descriptions = MCP schema)
 │   └── clients/           ← Async API wrappers
 │       ├── base.py        ← Shared HTTP client with retries
@@ -45,16 +45,18 @@ pocketscout-mcp/
     └── egfr_assessment.md ← Example walkthrough
 ```
 
-## The 6 Tools (workflow order)
+## The 8 Tools (workflow order)
 
 1. **characterize_target** — Bio context + AlphaFold confidence. Input: PDB ID or UniProt. APIs: UniProt + AlphaFold DB.
 2. **get_related_structures** — All PDB structures for the target. Input: PDB ID or UniProt. API: RCSB Search.
 3. **get_binding_sites** — Map known pockets from co-crystals. Input: PDB ID. API: RCSB Data.
 4. **get_ligand_history** — Competitive landscape. Input: UniProt. API: ChEMBL.
-5. **check_conservation** — Human vs. mouse at binding residues. Input: UniProt + residue positions. API: UniProt orthologs.
+5. **check_conservation** — Human vs. mouse/rat/cynomolgus at binding residues. Input: UniProt + residue positions. API: UniProt orthologs.
 6. **search_target_literature** — Structural/design papers. Input: gene name. API: PubMed E-utilities.
+7. **check_known_variants** — Known disease/resistance variants at binding residues. Input: UniProt + residue positions. API: UniProt.
+8. **consolidate_binding_sites** — Union of pockets across all structures, ranked by recurrence. Input: UniProt or PDB ID. API: RCSB Data + gemmi.
 
-**Orchestration prompt:** `binding_site_assessment` — guides Claude through all 6 tools in order, produces ranked binding site recommendation.
+**Orchestration prompts:** `target_briefing` — quick triage briefing (what the protein is, main pockets, competitive landscape); `binding_site_assessment` — in-depth, design-focused workup that guides Claude through all tools in order and produces a ranked binding site recommendation.
 
 ## Key API Details
 
@@ -109,7 +111,7 @@ Use these for development and testing:
 
 ## Publishing Plan
 
-1. GitHub: pmangiamele/pocketscout-mcp (public)
+1. GitHub: Proprius-Labs/pocketscout-mcp (public)
 2. PyPI: `pip install pocketscout-mcp`
 3. Register on awesome-mcp-servers list
 4. Register on MCP directory (mcp.so or mcpservers.org)

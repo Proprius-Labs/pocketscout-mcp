@@ -18,6 +18,28 @@ ARTIFACT_LIGANDS = {
 }
 
 
+_CHARGED_RESIDUES = {"ASP", "GLU", "LYS", "ARG", "HIS"}
+
+
+def classify_contact_type(residue_name: str, pairs: list[tuple[str, str, float]]) -> str:
+    """Classify a residue-ligand contact from (res_element, lig_element, distance) pairs.
+
+    Priority order: hydrogen_bond > ionic > hydrophobic > unknown.
+    - hydrogen_bond: both atoms are N or O and distance < 3.5 Å
+    - ionic: charged residue with N–O pair within 4.0 Å (but no tighter H-bond)
+    - hydrophobic: C–C pair within 4.5 Å
+    - unknown: no qualifying pair found
+    """
+    polar = {"N", "O"}
+    if any(r in polar and l in polar and d < 3.5 for r, l, d in pairs):
+        return "hydrogen_bond"
+    if residue_name in _CHARGED_RESIDUES and any(r in polar and l in polar and d < 4.0 for r, l, d in pairs):
+        return "ionic"
+    if any(r == "C" and l == "C" and d < 4.5 for r, l, d in pairs):
+        return "hydrophobic"
+    return "unknown"
+
+
 def parse_structure_metadata(entry: dict) -> dict:
     """Extract key metadata from a PDB entry response.
 
@@ -74,8 +96,7 @@ class PDBClient(BaseClient):
 
     async def get_entry(self, pdb_id: str) -> dict:
         """Fetch core entry metadata for a PDB structure."""
-        resp = await self.get(f"/rest/v1/core/entry/{pdb_id.upper()}")
-        return resp.json()
+        return await self.get_json(f"/rest/v1/core/entry/{pdb_id.upper()}")
 
     async def get_uniprot_residue_range(self, pdb_id: str) -> tuple[int, int] | None:
         """Get the UniProt residue range covered by a PDB structure.
@@ -96,8 +117,7 @@ class PDBClient(BaseClient):
 
         for eid in entity_ids:
             try:
-                resp = await self.get(f"/rest/v1/core/polymer_entity/{pdb_id}/{eid}")
-                entity = resp.json()
+                entity = await self.get_json(f"/rest/v1/core/polymer_entity/{pdb_id}/{eid}")
 
                 # Check if this entity maps to UniProt
                 identifiers = entity.get("rcsb_polymer_entity_container_identifiers", {})
@@ -135,8 +155,7 @@ class PDBClient(BaseClient):
 
         for eid in entity_ids:
             try:
-                resp = await self.get(f"/rest/v1/core/polymer_entity/{pdb_id}/{eid}")
-                entity = resp.json()
+                entity = await self.get_json(f"/rest/v1/core/polymer_entity/{pdb_id}/{eid}")
                 # UniProt references are in rcsb_polymer_entity_container_identifiers
                 identifiers = entity.get("rcsb_polymer_entity_container_identifiers", {})
                 uniprot_ids = identifiers.get("uniprot_ids", [])
@@ -151,8 +170,6 @@ class PDBClient(BaseClient):
 
         Uses the RCSB Search API v2.
         """
-        import httpx
-
         query = {
             "query": {
                 "type": "terminal",
@@ -176,16 +193,12 @@ class PDBClient(BaseClient):
             "return_type": "entry",
         }
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                "https://search.rcsb.org/rcsbsearch/v2/query",
-                json=query,
-            )
-            if resp.status_code == 204:
-                # No results
-                return []
-            resp.raise_for_status()
-            data = resp.json()
+        resp = await self.post(
+            "https://search.rcsb.org/rcsbsearch/v2/query", json=query
+        )
+        if resp.status_code == 204:
+            return []
+        data = resp.json()
 
         results = data.get("result_set", [])
         return [r.get("identifier", "") for r in results if r.get("identifier")]
@@ -204,8 +217,7 @@ class PDBClient(BaseClient):
         entities = []
         for eid in entity_ids:
             try:
-                resp = await self.get(f"/rest/v1/core/nonpolymer_entity/{pdb_id}/{eid}")
-                entities.append(resp.json())
+                entities.append(await self.get_json(f"/rest/v1/core/nonpolymer_entity/{pdb_id}/{eid}"))
             except APIError:
                 continue
         return entities
@@ -326,26 +338,33 @@ class PDBClient(BaseClient):
                     if residue.name not in ligand_ids:
                         continue
                     comp_id = residue.name
-                    seen = set()
+                    # pairs_by_key: residue key -> list of (res_element, lig_element, distance)
+                    pairs_by_key: dict[tuple[str, str, str], list[tuple[str, str, float]]] = {}
                     for atom in residue:
+                        lig_element = atom.element.name
                         for mark in ns.find_atoms(atom.pos, "\0", radius=cutoff):
                             cra = mark.to_cra(model)
                             if cra.residue.name not in amino_acids:
                                 continue
                             key = (cra.chain.name, cra.residue.name, str(cra.residue.seqid))
-                            if key in seen:
-                                continue
-                            seen.add(key)
+                            res_element = cra.atom.element.name
+                            dist = atom.pos.dist(cra.atom.pos)
+                            if key not in pairs_by_key:
+                                pairs_by_key[key] = []
+                            pairs_by_key[key].append((res_element, lig_element, dist))
 
                     contact_list = []
-                    for ch, resname, seqid in sorted(
-                        seen, key=lambda x: (x[0], int(x[2]) if x[2].isdigit() else 0)
+                    for key in sorted(
+                        pairs_by_key, key=lambda x: (x[0], int(x[2]) if x[2].isdigit() else 0)
                     ):
+                        ch, resname, seqid = key
                         seq_num = int(seqid) if seqid.isdigit() else 0
+                        contact_type = classify_contact_type(resname, pairs_by_key[key])
                         contact_list.append({
                             "chain": ch,
                             "residue_name": resname,
                             "residue_number": seq_num,
+                            "contact_type": contact_type,
                         })
 
                     if comp_id not in contacts_by_ligand:

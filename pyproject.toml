@@ -1,7 +1,7 @@
 [project]
 name = "pocketscout-mcp"
 version = "0.1.0"
-description = "Scout the binding landscape before you design the binder. An MCP server for drug target binding site intelligence."
+description = "Fast triage for drug-target binding sites — structural, chemical, and literature intelligence on druggable pockets, for AI assistants via MCP."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
@@ -35,8 +35,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/paulmm/pocketscout-mcp"
-Issues = "https://github.com/paulmm/pocketscout-mcp/issues"
+Homepage = "https://github.com/Proprius-Labs/pocketscout-mcp"
+Issues = "https://github.com/Proprius-Labs/pocketscout-mcp/issues"
 
 [build-system]
 requires = ["hatchling"]
